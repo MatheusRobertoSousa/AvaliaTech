@@ -1,27 +1,43 @@
 import { ArrowLeft, ArrowRight, Edit, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { api, type Question } from "../services/api";
+import { api, type AssessmentTest, type Question } from "../services/api";
 
 export function Questions() {
+  const [tests, setTests] = useState<AssessmentTest[]>([]);
+  const [selectedTestId, setSelectedTestId] = useState("");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [statement, setStatement] = useState("");
 
-  function loadQuestions() {
-    api.get<Question[]>("/questions?testId=test-frontend").then((response) => setQuestions(response.data));
+  function loadQuestions(testId = selectedTestId) {
+    if (!testId) return;
+    api.get<Question[]>(`/questions?testId=${testId}`).then((response) => setQuestions(response.data));
   }
 
-  useEffect(loadQuestions, []);
+  useEffect(() => {
+    api.get<AssessmentTest[]>("/tests").then((response) => {
+      setTests(response.data);
+      setSelectedTestId(response.data[0]?.id ?? "");
+    });
+  }, []);
+
+  useEffect(() => {
+    loadQuestions(selectedTestId);
+  }, [selectedTestId]);
 
   async function addQuestion(event: FormEvent) {
     event.preventDefault();
-    if (!statement.trim()) return;
+    if (!statement.trim() || !selectedTestId) return;
+
     await api.post("/questions", {
-      testId: "test-frontend",
+      testId: selectedTestId,
       statement,
       type: "objective",
       score: 10,
-      category: "JavaScript"
+      category: "JavaScript",
+      options: ["Alternativa A", "Alternativa B", "Alternativa C"],
+      answer: "Alternativa A"
     });
+
     setStatement("");
     loadQuestions();
   }
@@ -38,11 +54,14 @@ export function Questions() {
         <div className="panelTitle">
           <div>
             <h1>Questões do teste</h1>
-            <p>Adicione e organize as questões do seu teste.</p>
+            <p>Adicione e organize as questões do teste selecionado.</p>
           </div>
           <form className="inlineForm" onSubmit={addQuestion}>
+            <select value={selectedTestId} onChange={(event) => setSelectedTestId(event.target.value)}>
+              {tests.map((test) => <option value={test.id} key={test.id}>{test.title}</option>)}
+            </select>
             <input placeholder="Nova questão" value={statement} onChange={(event) => setStatement(event.target.value)} />
-            <button className="primaryButton compact"><Plus size={16} /> Adicionar questão</button>
+            <button className="primaryButton compact"><Plus size={16} /> Adicionar</button>
           </form>
         </div>
         <div className="questionList">
@@ -59,7 +78,7 @@ export function Questions() {
         </div>
         <div className="footerActions">
           <button className="secondaryButton"><ArrowLeft size={16} /> Anterior</button>
-          <a className="primaryButton compact" href="/exam">Próximo <ArrowRight size={16} /></a>
+          <a className="primaryButton compact" href="/exam">Abrir prova <ArrowRight size={16} /></a>
         </div>
       </article>
     </section>

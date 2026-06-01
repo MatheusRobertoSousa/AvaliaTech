@@ -665,6 +665,12 @@ th {
   color: #fff;
 }
 
+.numberGrid .answered {
+  background: #e8f7ef;
+  border-color: #20a567;
+  color: #157347;
+}
+
 .examCard {
   display: grid;
   gap: 14px;
@@ -861,11 +867,21 @@ th {
   }
 
   .questionRow {
-    grid-template-columns: 1fr auto;
+    align-items: start;
+    grid-template-columns: 1fr;
   }
 
   table {
     display: block;
     overflow-x: auto;
+  }
+
+  .steps {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .numberGrid {
+    grid-template-columns: repeat(auto-fit, 34px);
   }
 }

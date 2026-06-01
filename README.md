@@ -5,8 +5,9 @@ Protótipo full stack de uma plataforma SaaS de recrutamento e avaliações téc
 ## Stack desta entrega
 
 - Frontend: React, TypeScript, Vite, React Router, Axios e Lucide Icons.
-- Backend: Node.js, Express, TypeScript e Prisma.
-- Banco: Prisma configurado com SQLite local por padrão, pronto para trocar para PostgreSQL.
+- Backend: Node.js, Express e TypeScript.
+- Banco: SQLite local com seed automático ao iniciar a API.
+- Futuro: `backend/prisma/schema.prisma` documenta a modelagem para migração para PostgreSQL/ORM.
 
 ## Como rodar
 
@@ -17,6 +18,11 @@ npm run dev
 
 Frontend: http://localhost:5173  
 Backend API: http://localhost:3333
+
+Login demo:
+
+- E-mail: `recrutador@techsolutions.com`
+- Senha: `123456`
 Login demo: recrutador@techsolutions.com / 123456
 
 ## Endpoints iniciais
@@ -34,10 +40,12 @@ Login demo: recrutador@techsolutions.com / 123456
 
 ## Banco de dados
 
-O schema inicial fica em `backend/prisma/schema.prisma`. Para ativar persistência real:
+O backend cria e alimenta automaticamente o arquivo SQLite em `backend/data/avaliatech.sqlite`.
+
+Para resetar a base com os dados de demonstração:
 
 ```bash
-cd backend
-npx prisma migrate dev --name init
-npx prisma generate
+npm run db:setup --workspace backend
 ```
+
+O arquivo `.sqlite` não é versionado.

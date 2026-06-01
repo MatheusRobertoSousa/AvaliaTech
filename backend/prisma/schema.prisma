@@ -42,18 +42,24 @@ model Test {
 }
 
 model Question {
-  id        String @id @default(cuid())
+  id        String   @id @default(cuid())
   testId    String
   statement String
   type      String
   score     Int
-  test      Test   @relation(fields: [testId], references: [id])
+  category  String
+  options   Json?
+  answer    String?
+  createdAt DateTime @default(now())
+  test      Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
 }
 
 model Candidate {
   id          String       @id @default(cuid())
   name        String
   email       String       @unique
+  status      String       @default("pending")
+  createdAt   DateTime     @default(now())
   submissions Submission[]
 }
 
@@ -62,6 +68,8 @@ model Submission {
   candidateId String
   testId      String
   score       Int
+  answers     Json?
+  durationSeconds Int?
   startedAt   DateTime
   finishedAt  DateTime?
   candidate   Candidate @relation(fields: [candidateId], references: [id])

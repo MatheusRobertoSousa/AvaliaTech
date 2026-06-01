@@ -35,7 +35,8 @@ export type Question = {
   type: "objective" | "discursive";
   score: number;
   category: string;
-  options?: string[];
+  options?: string[] | null;
+  answer?: string | null;
 };
 
 export type Candidate = {
@@ -46,4 +47,14 @@ export type Candidate = {
   score: number;
   time: string;
   status: "approved" | "review" | "pending";
+};
+
+export type SubmissionResult = {
+  id: string;
+  candidate: string;
+  testTitle: string;
+  score: number;
+  time: string;
+  categoryPerformance: Array<{ category: string; score: number }>;
+  feedback: string;
 };
