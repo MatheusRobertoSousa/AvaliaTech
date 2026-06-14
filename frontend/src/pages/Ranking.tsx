@@ -14,8 +14,8 @@ export function Ranking() {
       <article className="panel">
         <div className="panelTitle">
           <div>
-            <h1>Ranking - Desenvolvedor Frontend</h1>
-            <p>Total de candidatos: {candidates.length}</p>
+            <h1>Ranking de candidatos</h1>
+            <p>Total de submissões: {candidates.length}</p>
           </div>
           <button className="secondaryButton"><Filter size={16} /> Filtros</button>
         </div>
@@ -24,15 +24,17 @@ export function Ranking() {
             <tr>
               <th>Posição</th>
               <th>Candidato</th>
+              <th>Teste</th>
               <th>Pontuação</th>
               <th>Tempo</th>
             </tr>
           </thead>
           <tbody>
             {candidates.map((candidate, index) => (
-              <tr className={candidate.name === "João Silva" ? "highlight" : ""} key={candidate.id}>
+              <tr className={candidate.name === "João Silva" ? "highlight" : ""} key={`${candidate.id}-${index}`}>
                 <td><Medal size={18} className={`medal medal-${index}`} /> {index + 1}º</td>
                 <td>{candidate.name}</td>
+                <td>{candidate.testTitle}</td>
                 <td>{candidate.score}%</td>
                 <td>{candidate.time}</td>
               </tr>

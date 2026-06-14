@@ -1,7 +1,7 @@
 import { ArrowRight, CheckCircle2, FileText, ListChecks } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../services/api";
+import { api, type AssessmentTest } from "../services/api";
 
 export function TestBuilder() {
   const navigate = useNavigate();
@@ -12,8 +12,8 @@ export function TestBuilder() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    await api.post("/tests", { title, description, difficulty, durationMinutes });
-    navigate("/questions");
+    const response = await api.post<AssessmentTest>("/tests", { title, description, difficulty, durationMinutes });
+    navigate(`/questions?testId=${response.data.id}`);
   }
 
   return (
@@ -26,14 +26,14 @@ export function TestBuilder() {
       </div>
       <form className="builderPanel" onSubmit={handleSubmit}>
         <h1>Informações do teste</h1>
-        <p>Preencha os dados básicos do seu teste.</p>
+        <p>Preencha os dados básicos do seu teste. Na próxima tela você adiciona as perguntas.</p>
         <label>Nome do teste<input value={title} onChange={(event) => setTitle(event.target.value)} /></label>
         <label>Descrição<textarea value={description} onChange={(event) => setDescription(event.target.value)} /></label>
         <div>
           <h3>Tipo de questões</h3>
           <div className="choiceGrid">
-            <button type="button" className="choice active"><ListChecks size={20} /> Objetivas <small>Múltipla escolha</small></button>
-            <button type="button" className="choice"><FileText size={20} /> Discursivas <small>Respostas abertas</small></button>
+            <button type="button" className="choice active"><ListChecks size={20} /> Objetivas <small>Múltipla escolha com correção automática</small></button>
+            <button type="button" className="choice"><FileText size={20} /> Discursivas <small>Respostas abertas para revisão</small></button>
           </div>
         </div>
         <div className="formGrid">

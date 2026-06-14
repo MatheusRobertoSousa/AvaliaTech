@@ -1,10 +1,12 @@
 import { ArrowLeft, ArrowRight, Edit, Plus, Trash2 } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { api, type AssessmentTest, type Question } from "../services/api";
 
 export function Questions() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [tests, setTests] = useState<AssessmentTest[]>([]);
-  const [selectedTestId, setSelectedTestId] = useState("");
+  const [selectedTestId, setSelectedTestId] = useState(searchParams.get("testId") ?? "");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [statement, setStatement] = useState("");
 
@@ -16,7 +18,9 @@ export function Questions() {
   useEffect(() => {
     api.get<AssessmentTest[]>("/tests").then((response) => {
       setTests(response.data);
-      setSelectedTestId(response.data[0]?.id ?? "");
+      const nextTestId = selectedTestId || response.data[0]?.id || "";
+      setSelectedTestId(nextTestId);
+      if (nextTestId) setSearchParams({ testId: nextTestId });
     });
   }, []);
 
@@ -42,6 +46,16 @@ export function Questions() {
     loadQuestions();
   }
 
+  async function deleteQuestion(id: string) {
+    await api.delete(`/questions/${id}`);
+    loadQuestions();
+  }
+
+  function changeTest(testId: string) {
+    setSelectedTestId(testId);
+    setSearchParams({ testId });
+  }
+
   return (
     <section className="page">
       <div className="steps">
@@ -57,7 +71,7 @@ export function Questions() {
             <p>Adicione e organize as questões do teste selecionado.</p>
           </div>
           <form className="inlineForm" onSubmit={addQuestion}>
-            <select value={selectedTestId} onChange={(event) => setSelectedTestId(event.target.value)}>
+            <select value={selectedTestId} onChange={(event) => changeTest(event.target.value)}>
               {tests.map((test) => <option value={test.id} key={test.id}>{test.title}</option>)}
             </select>
             <input placeholder="Nova questão" value={statement} onChange={(event) => setStatement(event.target.value)} />
@@ -72,13 +86,13 @@ export function Questions() {
               <span>{question.score} pts</span>
               <button><Plus size={15} /></button>
               <button><Edit size={15} /></button>
-              <button><Trash2 size={15} /></button>
+              <button onClick={() => deleteQuestion(question.id)}><Trash2 size={15} /></button>
             </div>
           ))}
         </div>
         <div className="footerActions">
-          <button className="secondaryButton"><ArrowLeft size={16} /> Anterior</button>
-          <a className="primaryButton compact" href="/exam">Abrir prova <ArrowRight size={16} /></a>
+          <Link className="secondaryButton" to="/tests/new"><ArrowLeft size={16} /> Anterior</Link>
+          <Link className="primaryButton compact" to={`/candidates?testId=${selectedTestId}`}>Convidar candidatos <ArrowRight size={16} /></Link>
         </div>
       </article>
     </section>

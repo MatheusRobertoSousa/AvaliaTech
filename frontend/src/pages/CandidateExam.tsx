@@ -1,33 +1,36 @@
 import { ArrowLeft, ArrowRight, Clock, LogOut } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Logo } from "../components/Logo";
 import { api, type AssessmentTest, type Question } from "../services/api";
 
 export function CandidateExam() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [test, setTest] = useState<AssessmentTest | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const candidateId = searchParams.get("candidateId") ?? "c5";
+  const requestedTestId = searchParams.get("testId");
 
   useEffect(() => {
     api.get<AssessmentTest[]>("/tests").then(async (response) => {
-      const selectedTest = response.data[0];
+      const selectedTest = response.data.find((item) => item.id === requestedTestId) ?? response.data[0];
       setTest(selectedTest);
       if (selectedTest) {
         const questionsResponse = await api.get<Question[]>(`/questions?testId=${selectedTest.id}`);
         setQuestions(questionsResponse.data);
       }
     });
-  }, []);
+  }, [requestedTestId]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!test) return;
 
     await api.post("/submissions", {
-      candidateId: "c5",
+      candidateId,
       testId: test.id,
       durationSeconds: 2535,
       answers: Object.entries(answers).map(([questionId, value]) => ({ questionId, value }))

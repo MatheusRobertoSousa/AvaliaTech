@@ -7,9 +7,16 @@ import { api, type DashboardResponse } from "../services/api";
 export function Dashboard() {
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
 
-  useEffect(() => {
+  function loadDashboard() {
     api.get<DashboardResponse>("/dashboard").then((response) => setDashboard(response.data));
-  }, []);
+  }
+
+  useEffect(loadDashboard, []);
+
+  async function deleteTest(id: string) {
+    await api.delete(`/tests/${id}`);
+    loadDashboard();
+  }
 
   if (!dashboard) {
     return <div className="loading">Carregando dashboard...</div>;
@@ -54,7 +61,10 @@ export function Dashboard() {
                   <td>{new Date(`${test.createdAt}T00:00:00`).toLocaleDateString("pt-BR")}</td>
                   <td>{test.candidates}</td>
                   <td><span className={`badge ${test.status}`}>{test.status === "active" ? "Ativo" : test.status === "draft" ? "Rascunho" : "Finalizado"}</span></td>
-                  <td className="actions"><button><Edit size={15} /></button><button><Trash2 size={15} /></button></td>
+                  <td className="actions">
+                    <Link to={`/questions?testId=${test.id}`}><Edit size={15} /></Link>
+                    <button onClick={() => deleteTest(test.id)}><Trash2 size={15} /></button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -67,8 +77,8 @@ export function Dashboard() {
           <div className="donut" style={{ "--score": `${dashboard.metrics.completionRate}%` } as React.CSSProperties}>
             <strong>{dashboard.metrics.completionRate}%</strong>
           </div>
-          <div className="legend"><span className="dot blue" /> Concluídos <strong>78%</strong></div>
-          <div className="legend"><span className="dot soft" /> Em andamento <strong>22%</strong></div>
+          <div className="legend"><span className="dot blue" /> Concluídos <strong>{dashboard.metrics.completionRate}%</strong></div>
+          <div className="legend"><span className="dot soft" /> Em andamento <strong>{100 - dashboard.metrics.completionRate}%</strong></div>
           <h3>Atividade recente</h3>
           {dashboard.activity.map((item) => <p className="activity" key={item}>{item}</p>)}
         </aside>

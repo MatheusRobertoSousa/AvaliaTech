@@ -6,9 +6,9 @@ const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/tests/new", label: "Testes", icon: ClipboardList },
   { to: "/questions", label: "Questões", icon: FileText },
+  { to: "/candidates", label: "Candidatos", icon: Users },
   { to: "/ranking", label: "Ranking", icon: Trophy },
-  { to: "/result", label: "Relatórios", icon: BarChart3 },
-  { to: "/dashboard", label: "Candidatos", icon: Users },
+  { to: "/reports", label: "Relatórios", icon: BarChart3 },
   { to: "/dashboard", label: "Configurações", icon: Settings }
 ];
 

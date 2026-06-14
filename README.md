@@ -35,8 +35,10 @@ Login demo: recrutador@techsolutions.com / 123456
 - `GET /questions`
 - `POST /questions`
 - `GET /candidates`
+- `POST /candidates`
 - `POST /submissions`
 - `GET /ranking`
+- `GET /reports`
 
 ## Banco de dados
 
@@ -49,3 +51,8 @@ npm run db:setup --workspace backend
 ```
 
 O arquivo `.sqlite` não é versionado.
+
+## Documentos da entrega
+
+- `docs/parte-2-implementacao-geral.md`: stack, justificativa, fluxos implementados e plano de cloud.
+- `docs/parte-3-teste-usabilidade.md`: roteiro para teste com 3 usuários, tarefas e planilha de avaliação.

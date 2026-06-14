@@ -49,6 +49,10 @@ export type Candidate = {
   status: "approved" | "review" | "pending";
 };
 
+export type CandidateInvite = Candidate & {
+  inviteUrl: string;
+};
+
 export type SubmissionResult = {
   id: string;
   candidate: string;
@@ -57,4 +61,16 @@ export type SubmissionResult = {
   time: string;
   categoryPerformance: Array<{ category: string; score: number }>;
   feedback: string;
+};
+
+export type ReportsResponse = {
+  tests: Array<{ id: string; title: string; status: string; submissions: number; averageScore: number }>;
+  candidates: Array<{ status: "approved" | "review" | "pending"; total: number }>;
+  bestCandidates: Array<{ name: string; testTitle: string; score: number; time: string }>;
+  cloudPlan: {
+    provider: string;
+    database: string;
+    storage: string;
+    deploy: string;
+  };
 };

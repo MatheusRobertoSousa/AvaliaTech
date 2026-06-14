@@ -2,7 +2,16 @@ import cors from "cors";
 import "dotenv/config";
 import express from "express";
 import { z } from "zod";
-import { db, initializeDatabase, parseOptions, seedDatabase, type DbCandidate, type DbQuestion, type DbSubmission, type DbTest } from "./database.js";
+import {
+  db,
+  initializeDatabase,
+  parseOptions,
+  seedDatabase,
+  type DbCandidate,
+  type DbQuestion,
+  type DbSubmission,
+  type DbTest
+} from "./database.js";
 
 const app = express();
 const port = Number(process.env.PORT ?? 3333);
@@ -198,6 +207,13 @@ app.post("/tests", (request, response) => {
   return response.status(201).json(publicTest(test));
 });
 
+app.delete("/tests/:id", (request, response) => {
+  db.prepare("DELETE FROM submissions WHERE testId = ?").run(request.params.id);
+  db.prepare("DELETE FROM questions WHERE testId = ?").run(request.params.id);
+  db.prepare("DELETE FROM tests WHERE id = ?").run(request.params.id);
+  response.status(204).send();
+});
+
 app.get("/questions", (request, response) => {
   const fallback = db.prepare("SELECT id FROM tests ORDER BY createdAt ASC LIMIT 1").get() as { id: string } | undefined;
   const testId = String(request.query.testId ?? fallback?.id ?? "");
@@ -248,6 +264,11 @@ app.post("/questions", (request, response) => {
   return response.status(201).json(question);
 });
 
+app.delete("/questions/:id", (request, response) => {
+  db.prepare("DELETE FROM questions WHERE id = ?").run(request.params.id);
+  response.status(204).send();
+});
+
 app.get("/candidates", (_request, response) => {
   const candidates = db.prepare(`
     SELECT candidates.*, submissions.score, submissions.durationSeconds, tests.title as testTitle
@@ -268,6 +289,45 @@ app.get("/candidates", (_request, response) => {
     score: candidate.score ?? 0,
     time: formatDuration(candidate.durationSeconds)
   })));
+});
+
+app.post("/candidates", (request, response) => {
+  const schema = z.object({
+    name: z.string().min(2),
+    email: z.string().email(),
+    testId: z.string().optional()
+  });
+  const result = schema.safeParse(request.body);
+
+  if (!result.success) {
+    return response.status(400).json({ message: "Dados do candidato inválidos." });
+  }
+
+  const id = `candidate-${Date.now()}`;
+  const now = new Date().toISOString();
+  const testId = result.data.testId ?? "test-frontend";
+  const existingCandidate = db.prepare("SELECT id, name, email, status FROM candidates WHERE email = ?").get(result.data.email) as DbCandidate | undefined;
+
+  if (!existingCandidate) {
+    db.prepare("INSERT INTO candidates (id, name, email, status, createdAt) VALUES (?, ?, ?, ?, ?)").run(
+      id,
+      result.data.name,
+      result.data.email,
+      "pending",
+      now
+    );
+  }
+
+  response.status(201).json({
+    id: existingCandidate?.id ?? id,
+    name: existingCandidate?.name ?? result.data.name,
+    email: existingCandidate?.email ?? result.data.email,
+    status: existingCandidate?.status ?? "pending",
+    testTitle: "Convite enviado",
+    score: 0,
+    time: "00:00",
+    inviteUrl: `/exam?candidateId=${existingCandidate?.id ?? id}&testId=${testId}`
+  });
 });
 
 app.post("/submissions", (request, response) => {
@@ -308,6 +368,7 @@ app.post("/submissions", (request, response) => {
     new Date(now.getTime() - durationSeconds * 1000).toISOString(),
     now.toISOString()
   );
+  db.prepare("UPDATE candidates SET status = ? WHERE id = ?").run(score >= 85 ? "approved" : "review", result.data.candidateId);
 
   response.status(201).json({
     id,
@@ -364,6 +425,46 @@ app.get("/ranking", (_request, response) => {
     score: submission.score,
     time: formatDuration(submission.durationSeconds)
   })));
+});
+
+app.get("/reports", (_request, response) => {
+  const tests = db.prepare(`
+    SELECT tests.id, tests.title, tests.status, COUNT(submissions.id) as submissions, AVG(submissions.score) as averageScore
+    FROM tests
+    LEFT JOIN submissions ON submissions.testId = tests.id
+    WHERE tests.companyId = ?
+    GROUP BY tests.id
+    ORDER BY tests.createdAt DESC
+  `).all("company-demo") as Array<{ id: string; title: string; status: string; submissions: number; averageScore: number | null }>;
+  const candidates = db.prepare("SELECT status, COUNT(*) as total FROM candidates GROUP BY status").all() as Array<{ status: string; total: number }>;
+  const bestCandidates = db.prepare(`
+    SELECT candidates.name, tests.title as testTitle, submissions.score, submissions.durationSeconds
+    FROM submissions
+    JOIN candidates ON candidates.id = submissions.candidateId
+    JOIN tests ON tests.id = submissions.testId
+    ORDER BY submissions.score DESC, submissions.durationSeconds ASC
+    LIMIT 5
+  `).all() as Array<{ name: string; testTitle: string; score: number; durationSeconds: number }>;
+
+  response.json({
+    tests: tests.map((test) => ({
+      ...test,
+      averageScore: Math.round(test.averageScore ?? 0)
+    })),
+    candidates,
+    bestCandidates: bestCandidates.map((candidate) => ({
+      name: candidate.name,
+      testTitle: candidate.testTitle,
+      score: candidate.score,
+      time: formatDuration(candidate.durationSeconds)
+    })),
+    cloudPlan: {
+      provider: "AWS",
+      database: "Amazon RDS PostgreSQL",
+      storage: "Amazon S3 para anexos e relatórios",
+      deploy: "ECS/Fargate ou Elastic Beanstalk para API e frontend"
+    }
+  });
 });
 
 app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
