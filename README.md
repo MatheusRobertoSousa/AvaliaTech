@@ -23,7 +23,6 @@ Login demo:
 
 - E-mail: `recrutador@techsolutions.com`
 - Senha: `123456`
-Login demo: recrutador@techsolutions.com / 123456
 
 ## Endpoints iniciais
 
