@@ -15,8 +15,9 @@ export function Reports() {
   }
 
   const totalSubmissions = reports.tests.reduce((sum, test) => sum + test.submissions, 0);
-  const averageScore = reports.tests.length
-    ? Math.round(reports.tests.reduce((sum, test) => sum + test.averageScore, 0) / reports.tests.length)
+  const scoredTests = reports.tests.filter((test) => test.submissions > 0);
+  const averageScore = scoredTests.length
+    ? Math.round(scoredTests.reduce((sum, test) => sum + test.averageScore, 0) / scoredTests.length)
     : 0;
   const approved = reports.candidates.find((item) => item.status === "approved")?.total ?? 0;
 
@@ -25,14 +26,14 @@ export function Reports() {
       <header className="pageHeader">
         <div>
           <h1>Relatórios</h1>
-          <p>Visão consolidada dos testes, candidatos e preparação para nuvem.</p>
+          <p>Visão executiva para acompanhar performance, qualidade do funil e prontidão para cloud.</p>
         </div>
       </header>
 
       <div className="metricsGrid">
-        <MetricCard label="Submissões" value={totalSubmissions} icon={Server} />
-        <MetricCard label="Média geral" value={`${averageScore}%`} icon={Trophy} tone="amber" />
-        <MetricCard label="Aprovados" value={approved} icon={Trophy} tone="green" />
+        <MetricCard label="Submissões concluídas" value={totalSubmissions} icon={Server} />
+        <MetricCard label="Média dos testes" value={`${averageScore}%`} icon={Trophy} tone="amber" />
+        <MetricCard label="Candidatos aprovados" value={approved} icon={Trophy} tone="green" />
         <MetricCard label="Cloud alvo" value={reports.cloudPlan.provider} icon={Cloud} tone="teal" />
       </div>
 
@@ -52,7 +53,7 @@ export function Reports() {
               {reports.tests.map((test) => (
                 <tr key={test.id}>
                   <td>{test.title}</td>
-                  <td><span className={`badge ${test.status}`}>{test.status}</span></td>
+                  <td><span className={`badge ${test.status}`}>{test.status === "active" ? "Ativo" : test.status === "draft" ? "Rascunho" : "Finalizado"}</span></td>
                   <td>{test.submissions}</td>
                   <td>{test.averageScore}%</td>
                 </tr>

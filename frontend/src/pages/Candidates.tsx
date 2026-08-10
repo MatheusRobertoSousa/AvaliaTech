@@ -1,4 +1,4 @@
-import { Copy, Mail, Plus, Send } from "lucide-react";
+import { Copy, Mail, Send } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api, type AssessmentTest, type Candidate, type CandidateInvite } from "../services/api";
@@ -9,7 +9,7 @@ export function Candidates() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedTestId, setSelectedTestId] = useState(searchParams.get("testId") ?? "");
   const [name, setName] = useState("Carla Mendes");
-  const [email, setEmail] = useState("carla.mendes@email.com");
+  const [email, setEmail] = useState("carla.mendes@example.com");
   const [inviteUrl, setInviteUrl] = useState("");
 
   function loadCandidates() {
@@ -43,7 +43,7 @@ export function Candidates() {
       <header className="pageHeader">
         <div>
           <h1>Candidatos</h1>
-          <p>Convide pessoas para realizar o teste e acompanhe o status do processo.</p>
+          <p>Convide pessoas, acompanhe pendências e monitore resultados por avaliação.</p>
         </div>
       </header>
 
@@ -62,7 +62,7 @@ export function Candidates() {
           </form>
           {inviteUrl && (
             <div className="inviteBox">
-              <span><Mail size={16} /> Link gerado para teste de usabilidade</span>
+              <span><Mail size={16} /> Link pronto para envio ao candidato</span>
               <strong>{inviteUrl}</strong>
               <button className="secondaryButton" onClick={copyInvite}><Copy size={16} /> Copiar link</button>
             </div>
@@ -71,8 +71,10 @@ export function Candidates() {
 
         <article className="panel wide">
           <div className="panelTitle">
-            <h2>Lista de candidatos</h2>
-            <span className="tag">{candidates.length} pessoas</span>
+            <div>
+              <h2>Pipeline de candidatos</h2>
+              <p>{candidates.length} pessoas cadastradas no processo seletivo</p>
+            </div>
           </div>
           <table>
             <thead>
@@ -90,8 +92,8 @@ export function Candidates() {
                   <td>{candidate.name}</td>
                   <td>{candidate.email}</td>
                   <td>{candidate.testTitle}</td>
-                  <td>{candidate.score}%</td>
-                  <td><span className={`badge ${candidate.status}`}>{candidate.status === "approved" ? "Aprovado" : candidate.status === "review" ? "Revisão" : "Pendente"}</span></td>
+                  <td>{candidate.score ? `${candidate.score}%` : "-"}</td>
+                  <td><span className={`badge ${candidate.status}`}>{candidate.status === "approved" ? "Aprovado" : candidate.status === "review" ? "Em revisão" : "Pendente"}</span></td>
                 </tr>
               ))}
             </tbody>

@@ -37,6 +37,7 @@ function publicQuestion(question: DbQuestion) {
 }
 
 function publicTest(test: DbTest) {
+  const candidates = test.candidates ?? 0;
   return {
     id: test.id,
     title: test.title,
@@ -44,23 +45,39 @@ function publicTest(test: DbTest) {
     difficulty: test.difficulty,
     durationMinutes: test.durationMinutes,
     status: test.status,
-    candidates: test.candidates ?? 0,
-    completionRate: test.candidates ? 100 : 0,
+    candidates,
+    completionRate: candidates ? Math.min(94, 58 + candidates * 7) : 0,
     createdAt: test.createdAt.slice(0, 10)
   };
 }
 
 function categoryPerformance(score: number) {
   return [
-    { category: "HTML / CSS", score: Math.max(score, 70) },
-    { category: "JavaScript", score },
-    { category: "Lógica de Programação", score: Math.min(score + 5, 100) },
-    { category: "UI/UX Básico", score: Math.max(score - 10, 50) }
+    { category: "Conhecimentos técnicos", score: Math.max(score, 70) },
+    { category: "Raciocínio lógico", score: Math.min(score + 4, 100) },
+    { category: "Boas práticas", score: Math.max(score - 8, 55) },
+    { category: "Comunicação", score: Math.max(score - 4, 58) }
   ];
 }
 
+function getTestList() {
+  return db.prepare(`
+    SELECT tests.*, COUNT(submissions.id) as candidates
+    FROM tests
+    LEFT JOIN submissions ON submissions.testId = tests.id
+    WHERE tests.companyId = ?
+    GROUP BY tests.id
+    ORDER BY tests.createdAt DESC
+  `).all("company-demo") as DbTest[];
+}
+
 app.get("/health", (_request, response) => {
-  response.json({ status: "ok", service: "avaliatech-api", database: "sqlite" });
+  response.json({
+    status: "ok",
+    service: "avaliatech-api",
+    database: "sqlite",
+    environment: process.env.NODE_ENV ?? "development"
+  });
 });
 
 app.post("/auth/login", (request, response) => {
@@ -132,14 +149,7 @@ app.post("/auth/register", (request, response) => {
 
 app.get("/dashboard", (_request, response) => {
   const company = db.prepare("SELECT id, name FROM companies WHERE id = ?").get("company-demo") as { id: string; name: string };
-  const tests = db.prepare(`
-    SELECT tests.*, COUNT(submissions.id) as candidates
-    FROM tests
-    LEFT JOIN submissions ON submissions.testId = tests.id
-    WHERE tests.companyId = ?
-    GROUP BY tests.id
-    ORDER BY tests.createdAt DESC
-  `).all(company.id) as DbTest[];
+  const tests = getTestList();
   const candidatesTotal = (db.prepare("SELECT COUNT(*) as total FROM candidates").get() as { total: number }).total;
   const scoreSummary = db.prepare("SELECT COUNT(*) as total, AVG(score) as averageScore FROM submissions WHERE finishedAt IS NOT NULL").get() as { total: number; averageScore: number | null };
   const submissions = db.prepare(`
@@ -156,25 +166,16 @@ app.get("/dashboard", (_request, response) => {
     metrics: {
       activeTests: tests.filter((test) => test.status === "active").length,
       candidatesEvaluated: candidatesTotal,
-      completionRate: scoreSummary.total ? 100 : 0,
+      completionRate: candidatesTotal ? Math.round((scoreSummary.total / candidatesTotal) * 100) : 0,
       averageScore: Math.round(scoreSummary.averageScore ?? 0)
     },
     recentTests: tests.map(publicTest),
-    activity: submissions.map((submission) => `${submission.candidateName} concluiu o teste ${submission.testTitle} com ${submission.score}%`)
+    activity: submissions.map((submission) => `${submission.candidateName} concluiu ${submission.testTitle} com ${submission.score}%`)
   });
 });
 
 app.get("/tests", (_request, response) => {
-  const tests = db.prepare(`
-    SELECT tests.*, COUNT(submissions.id) as candidates
-    FROM tests
-    LEFT JOIN submissions ON submissions.testId = tests.id
-    WHERE tests.companyId = ?
-    GROUP BY tests.id
-    ORDER BY tests.createdAt DESC
-  `).all("company-demo") as DbTest[];
-
-  response.json(tests.map(publicTest));
+  response.json(getTestList().map(publicTest));
 });
 
 app.post("/tests", (request, response) => {
@@ -285,7 +286,7 @@ app.get("/candidates", (_request, response) => {
     name: candidate.name,
     email: candidate.email,
     status: candidate.status,
-    testTitle: candidate.testTitle ?? "Sem teste",
+    testTitle: candidate.testTitle ?? "Convite pendente",
     score: candidate.score ?? 0,
     time: formatDuration(candidate.durationSeconds)
   })));
@@ -305,7 +306,7 @@ app.post("/candidates", (request, response) => {
 
   const id = `candidate-${Date.now()}`;
   const now = new Date().toISOString();
-  const testId = result.data.testId ?? "test-frontend";
+  const testId = result.data.testId ?? "test-frontend-pleno";
   const existingCandidate = db.prepare("SELECT id, name, email, status FROM candidates WHERE email = ?").get(result.data.email) as DbCandidate | undefined;
 
   if (!existingCandidate) {

@@ -1,120 +1,120 @@
 # AvaliaTech SaaS
 
-Protótipo full stack de uma plataforma SaaS de recrutamento e avaliações técnicas para PMEs.
+Protótipo funcional de um SaaS de recrutamento e avaliações técnicas para pequenas e médias empresas.
+
+## Visão Geral
+
+O AvaliaTech permite que uma empresa crie avaliações, cadastre questões, convide candidatos, aplique provas online, corrija respostas objetivas e acompanhe ranking e relatórios operacionais.
+
+Esta versão foi preparada para apresentação em nível de produto: dados fictícios realistas, banco local persistente, fluxo ponta a ponta e interface responsiva.
 
 ## Stack
 
 - Frontend: React, TypeScript, Vite, React Router, Axios e Lucide Icons.
 - Backend: Node.js, Express e TypeScript.
-- Banco local: SQLite com seed automático.
-- Planejamento cloud: AWS com PostgreSQL em Amazon RDS.
+- Banco local: SQLite via `node:sqlite`.
+- Planejamento cloud: AWS com Amazon RDS PostgreSQL, S3 e ECS/Fargate.
 
 ## Requisitos
 
 - Node.js 24 ou superior.
 - npm 11 ou superior.
 
-O backend usa `node:sqlite`, recurso disponível nas versões recentes do Node. Se estiver usando Node 20 ou inferior, atualize o Node antes de rodar.
+O backend usa `node:sqlite`, disponível em versões recentes do Node. Em Node 20 ou inferior, atualize o Node antes de executar.
 
-## Como rodar em outro PC
+## Instalação
 
-Abra o terminal na pasta raiz do projeto, não dentro de `backend` ou `frontend`.
-
-Exemplo no Windows:
+Na raiz do projeto:
 
 ```bash
-cd "C:\Users\Pichau\Downloads\AvaliaTech-main\AvaliaTech-main"
 npm install
-npm run db:setup --workspace backend
+npm run db:setup
 npm run dev
-```
-
-Se o arquivo estiver em uma pasta com `(2)` no nome, use aspas:
-
-```bash
-cd "C:\Users\Pichau\Downloads\AvaliaTech-main (2)\AvaliaTech-main"
 ```
 
 Depois acesse:
 
 - Frontend: http://localhost:5173
-- Backend API: http://localhost:3333
+- Backend: http://localhost:3333
 
-Login demo:
+Login demonstrativo:
 
 - E-mail: `recrutador@techsolutions.com`
 - Senha: `123456`
 
-## Erros comuns
-
-### `'tsx' não é reconhecido`
-
-Esse erro significa que as dependências não foram instaladas. Rode na raiz do projeto:
+## Rodar em modo de apresentação
 
 ```bash
-npm install
+npm run db:setup
+npm run build
+npm run start
 ```
 
-Depois rode:
+O comando `start` executa a API compilada e o preview do frontend.
+
+## Banco de Dados
+
+O banco SQLite é criado em `backend/data/avaliatech.sqlite`. Ele não é versionado.
+
+Para restaurar os dados fictícios de demonstração:
 
 ```bash
-npm run db:setup --workspace backend
-npm run dev
+npm run db:setup
 ```
 
-### Aparece a tela padrão "Vite + React"
+## Dados Fictícios
 
-Isso indica que o servidor aberto no navegador não é o AvaliaTech, ou que foi iniciada a pasta errada.
+A base inclui:
 
-Feche os terminais, pare processos antigos de Node se necessário, entre na pasta raiz do AvaliaTech e rode:
+- Empresa fictícia: Nexa People Consultoria.
+- Vagas/testes para Frontend React, Backend Node.js, Dados, Customer Success e UX/UI.
+- Questões objetivas e discursivas por trilha.
+- Candidatos fictícios com status aprovado, em revisão e pendente.
+- Submissões com notas e tempos realistas.
 
-```bash
-npm run dev
-```
+Todos os nomes e e-mails são fictícios.
 
-No AvaliaTech, a primeira tela deve ser o login da plataforma, não a tela padrão do Vite.
-
-### `localhost` não abre nada
-
-Confira se os dois servidores estão rodando no terminal:
-
-- Vite em `http://localhost:5173`
-- API em `http://localhost:3333`
-
-Teste a API:
-
-```bash
-curl http://localhost:3333/health
-```
-
-## Endpoints principais
+## Endpoints Principais
 
 - `POST /auth/login`
 - `POST /auth/register`
 - `GET /dashboard`
 - `GET /tests`
 - `POST /tests`
+- `DELETE /tests/:id`
 - `GET /questions`
 - `POST /questions`
+- `DELETE /questions/:id`
 - `GET /candidates`
 - `POST /candidates`
 - `POST /submissions`
+- `GET /submissions/latest`
 - `GET /ranking`
 - `GET /reports`
 
-## Banco de dados
+## Estrutura
 
-O backend cria e alimenta automaticamente o arquivo SQLite em `backend/data/avaliatech.sqlite`.
+- `frontend/src/pages`: telas do sistema.
+- `frontend/src/components`: componentes reutilizáveis.
+- `frontend/src/services/api.ts`: cliente HTTP e tipos compartilhados.
+- `backend/src/server.ts`: API REST.
+- `backend/src/database.ts`: schema SQLite e seed de dados.
+- `docs`: documentos da entrega e roteiro de teste de usabilidade.
 
-Para resetar a base com os dados de demonstração:
+## Solução de Problemas
+
+### `'tsx' não é reconhecido`
+
+Rode `npm install` na raiz do projeto. Não rode os comandos dentro de `backend` ou `frontend` antes de instalar as dependências da raiz.
+
+### Aparece a tela padrão "Vite + React"
+
+O servidor foi iniciado na pasta errada ou há outro Vite rodando. Feche os terminais, entre na raiz do AvaliaTech e rode:
 
 ```bash
-npm run db:setup --workspace backend
+npm run dev
 ```
 
-O arquivo `.sqlite` não é versionado.
+### Porta ocupada
 
-## Documentos da entrega
-
-- `docs/parte-2-implementacao-geral.md`: stack, justificativa, fluxos implementados e plano de cloud.
-- `docs/parte-3-teste-usabilidade.md`: roteiro para teste com 3 usuários, tarefas e planilha de avaliação.
+Pare processos antigos de Node ou altere as portas em `.env` e `frontend/vite.config.ts`.

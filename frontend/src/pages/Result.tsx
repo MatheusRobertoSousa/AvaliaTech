@@ -24,7 +24,7 @@ export function Result() {
         <strong className="score">{result.score}%</strong>
         <small>{result.score} de 100 pontos</small>
         <div className="resultStats">
-          <div><small>Classificação geral</small><strong>5º Lugar</strong></div>
+          <div><small>Classificação geral</small><strong>Top 5</strong></div>
           <div><small>Tempo de conclusão</small><strong>{result.time}</strong></div>
         </div>
         <Link className="primaryButton compact" to="/ranking">Ver ranking completo</Link>
