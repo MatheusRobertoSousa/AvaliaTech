@@ -27,10 +27,10 @@ export function AppLayout() {
         </nav>
         <div className="sidebarFooter">
           <span>
-            <HelpCircle size={16} /> Ajuda
+            <HelpCircle size={16} /> Central de ajuda
           </span>
-          <strong>Tech Solutions</strong>
-          <small>Empresa</small>
+          <strong>Nexa People</strong>
+          <small>Workspace demo</small>
         </div>
       </aside>
       <main className="mainPanel">

@@ -1,6 +1,7 @@
 import { ArrowRight, Building2, Cloud, FileBarChart, LockKeyhole, Mail, Workflow } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import heroImage from "../assets/avaliatech-hero.png";
 import { Logo } from "../components/Logo";
 import { api } from "../services/api";
 
@@ -28,6 +29,7 @@ export function Login() {
   return (
     <main className="loginPage">
       <section className="brandPanel">
+        <img className="brandVisual" src={heroImage} alt="" />
         <Logo />
         <div>
           <span className="eyebrow">ATS + avaliações técnicas</span>
@@ -35,7 +37,7 @@ export function Login() {
           <p>Uma operação simples para PMEs criarem avaliações, convidarem candidatos e compararem resultados com segurança.</p>
         </div>
         <ul>
-          <li><LockKeyhole size={18} /> Banco local persistente para demonstração</li>
+          <li><LockKeyhole size={18} /> Banco persistente com dados realistas de demonstração</li>
           <li><FileBarChart size={18} /> Indicadores de conclusão, média e desempenho</li>
           <li><Workflow size={18} /> Fluxo completo de teste até ranking</li>
         </ul>
