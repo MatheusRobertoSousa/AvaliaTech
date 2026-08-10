@@ -3,14 +3,22 @@ import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { api, type AssessmentTest, type Candidate, type CandidateInvite } from "../services/api";
 
+const invitationLabels: Record<string, string> = {
+  invited: "Convite enviado",
+  started: "Prova iniciada",
+  completed: "Concluído",
+  expired: "Expirado"
+};
+
 export function Candidates() {
   const [searchParams] = useSearchParams();
   const [tests, setTests] = useState<AssessmentTest[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedTestId, setSelectedTestId] = useState(searchParams.get("testId") ?? "");
-  const [name, setName] = useState("Carla Mendes");
-  const [email, setEmail] = useState("carla.mendes@example.com");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
+  const [saving, setSaving] = useState(false);
 
   function loadCandidates() {
     api.get<Candidate[]>("/candidates").then((response) => setCandidates(response.data));
@@ -26,16 +34,28 @@ export function Candidates() {
 
   async function inviteCandidate(event: FormEvent) {
     event.preventDefault();
-    const response = await api.post<CandidateInvite>("/candidates", { name, email, testId: selectedTestId });
-    setInviteUrl(`${window.location.origin}${response.data.inviteUrl}`);
-    setName("");
-    setEmail("");
-    loadCandidates();
+    if (!selectedTestId || !name.trim() || !email.trim() || saving) return;
+
+    setSaving(true);
+    try {
+      const response = await api.post<CandidateInvite>("/candidates", { name, email, testId: selectedTestId });
+      setInviteUrl(`${window.location.origin}${response.data.inviteUrl}`);
+      setName("");
+      setEmail("");
+      loadCandidates();
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function copyInvite() {
     if (!inviteUrl) return;
     await navigator.clipboard.writeText(inviteUrl);
+  }
+
+  async function copyCandidateInvite(candidate: Candidate) {
+    if (!candidate.inviteUrl) return;
+    await navigator.clipboard.writeText(`${window.location.origin}${candidate.inviteUrl}`);
   }
 
   return (
@@ -56,9 +76,15 @@ export function Candidates() {
                 {tests.map((test) => <option value={test.id} key={test.id}>{test.title}</option>)}
               </select>
             </label>
-            <label>Nome do candidato<input value={name} onChange={(event) => setName(event.target.value)} /></label>
-            <label>E-mail<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-            <button className="primaryButton"><Send size={16} /> Gerar convite</button>
+            <label>Nome do candidato
+              <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Carla Mendes" />
+            </label>
+            <label>E-mail
+              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="candidato@email.com" />
+            </label>
+            <button className="primaryButton" disabled={!selectedTestId || !name || !email || saving}>
+              <Send size={16} /> {saving ? "Gerando..." : "Gerar convite"}
+            </button>
           </form>
           {inviteUrl && (
             <div className="inviteBox">
@@ -84,6 +110,7 @@ export function Candidates() {
                 <th>Teste</th>
                 <th>Pontuação</th>
                 <th>Status</th>
+                <th>Convite</th>
               </tr>
             </thead>
             <tbody>
@@ -93,7 +120,23 @@ export function Candidates() {
                   <td>{candidate.email}</td>
                   <td>{candidate.testTitle}</td>
                   <td>{candidate.score ? `${candidate.score}%` : "-"}</td>
-                  <td><span className={`badge ${candidate.status}`}>{candidate.status === "approved" ? "Aprovado" : candidate.status === "review" ? "Em revisão" : "Pendente"}</span></td>
+                  <td>
+                    <span className={`badge ${candidate.status}`}>
+                      {candidate.status === "approved" ? "Aprovado" : candidate.status === "review" ? "Em revisão" : "Pendente"}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      className={`linkButton ${candidate.invitationStatus ?? "invited"}`}
+                      type="button"
+                      onClick={() => copyCandidateInvite(candidate)}
+                      disabled={!candidate.inviteUrl || candidate.invitationStatus === "completed"}
+                      title={candidate.inviteUrl ? "Copiar link do convite" : "Sem convite ativo"}
+                    >
+                      <Copy size={14} />
+                      {invitationLabels[candidate.invitationStatus ?? "invited"] ?? "Convite"}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

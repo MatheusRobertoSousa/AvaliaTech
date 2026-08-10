@@ -14,6 +14,8 @@ export function Dashboard() {
   useEffect(loadDashboard, []);
 
   async function deleteTest(id: string) {
+    const shouldDelete = window.confirm("Excluir este teste e todos os convites/submissões associados?");
+    if (!shouldDelete) return;
     await api.delete(`/tests/${id}`);
     loadDashboard();
   }
@@ -54,6 +56,7 @@ export function Dashboard() {
               <tr>
                 <th>Nome do teste</th>
                 <th>Criado em</th>
+                <th>Convites</th>
                 <th>Submissões</th>
                 <th>Conclusão</th>
                 <th>Status</th>
@@ -69,8 +72,13 @@ export function Dashboard() {
                   </td>
                   <td>{new Date(`${test.createdAt}T00:00:00`).toLocaleDateString("pt-BR")}</td>
                   <td>{test.candidates}</td>
+                  <td>{test.submissions ?? 0}</td>
                   <td>{test.completionRate}%</td>
-                  <td><span className={`badge ${test.status}`}>{test.status === "active" ? "Ativo" : test.status === "draft" ? "Rascunho" : "Finalizado"}</span></td>
+                  <td>
+                    <span className={`badge ${test.status}`}>
+                      {test.status === "active" ? "Ativo" : test.status === "draft" ? "Rascunho" : "Finalizado"}
+                    </span>
+                  </td>
                   <td className="actions">
                     <Link to={`/questions?testId=${test.id}`} aria-label="Editar questões"><Edit size={15} /></Link>
                     <button onClick={() => deleteTest(test.id)} aria-label="Excluir teste"><Trash2 size={15} /></button>
@@ -89,7 +97,9 @@ export function Dashboard() {
           <div className="legend"><span className="dot blue" /> Concluídos <strong>{dashboard.metrics.completionRate}%</strong></div>
           <div className="legend"><span className="dot soft" /> Pendentes <strong>{100 - dashboard.metrics.completionRate}%</strong></div>
           <h3>Atividade recente</h3>
-          {dashboard.activity.map((item) => <p className="activity" key={item}>{item}</p>)}
+          {dashboard.activity.length > 0
+            ? dashboard.activity.map((item) => <p className="activity" key={item}>{item}</p>)
+            : <p className="activity">Nenhuma submissão concluída ainda.</p>}
         </aside>
       </div>
     </section>

@@ -1,5 +1,5 @@
-import { BarChart3, ClipboardList, FileText, HelpCircle, LayoutDashboard, Settings, Trophy, Users } from "lucide-react";
-import { NavLink, Outlet } from "react-router-dom";
+import { BarChart3, ClipboardList, FileText, HelpCircle, LayoutDashboard, Trophy, Users } from "lucide-react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Logo } from "./Logo";
 
 const navItems = [
@@ -8,11 +8,20 @@ const navItems = [
   { to: "/questions", label: "Questões", icon: FileText },
   { to: "/candidates", label: "Candidatos", icon: Users },
   { to: "/ranking", label: "Ranking", icon: Trophy },
-  { to: "/reports", label: "Relatórios", icon: BarChart3 },
-  { to: "/dashboard", label: "Configurações", icon: Settings }
+  { to: "/reports", label: "Relatórios", icon: BarChart3 }
 ];
 
 export function AppLayout() {
+  const navigate = useNavigate();
+  const storedUser = localStorage.getItem("avaliatech.user");
+  const user = storedUser ? JSON.parse(storedUser) as { name: string; company: string; role: string } : null;
+
+  function logout() {
+    localStorage.removeItem("avaliatech.token");
+    localStorage.removeItem("avaliatech.user");
+    navigate("/");
+  }
+
   return (
     <div className="appShell">
       <aside className="sidebar">
@@ -27,10 +36,11 @@ export function AppLayout() {
         </nav>
         <div className="sidebarFooter">
           <span>
-            <HelpCircle size={16} /> Central de ajuda
+            <HelpCircle size={16} /> Sessão ativa
           </span>
-          <strong>Nexa People</strong>
-          <small>Workspace demo</small>
+          <strong>{user?.company ?? "AvaliaTech"}</strong>
+          <small>{user?.name ?? "Recrutador"}</small>
+          <button className="logoutButton" onClick={logout}>Sair</button>
         </div>
       </aside>
       <main className="mainPanel">

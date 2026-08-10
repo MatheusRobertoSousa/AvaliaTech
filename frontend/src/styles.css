@@ -656,6 +656,35 @@ th {
   min-width: min(520px, 100%);
 }
 
+.selectCompact {
+  min-width: min(360px, 100%);
+}
+
+.questionForm {
+  background: linear-gradient(180deg, #f8fbff, #fff);
+  border: 1px solid #e7ebf2;
+  border-radius: 10px;
+  margin-top: 20px;
+  padding: 18px;
+}
+
+.questionFormHeader {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.questionFormGrid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 1fr 1fr 160px;
+}
+
+.questionFormGrid.wideFields {
+  grid-template-columns: 1.3fr 0.7fr;
+}
+
 .questionList {
   display: grid;
   gap: 8px;
@@ -669,6 +698,82 @@ th {
   gap: 12px;
   grid-template-columns: 1fr auto auto auto 32px 32px 32px;
   padding: 12px 0;
+}
+
+.emptyState,
+.inlineAlert,
+.stateCard {
+  align-items: center;
+  border: 1px dashed #c8d7f5;
+  border-radius: 10px;
+  color: #475467;
+  display: flex;
+  gap: 10px;
+  padding: 16px;
+}
+
+.emptyState {
+  align-items: flex-start;
+  background: #f8fbff;
+  flex-direction: column;
+}
+
+.inlineAlert {
+  background: #fff8ed;
+  border-color: #fedf89;
+  color: #b54708;
+  margin-bottom: 18px;
+}
+
+.centeredState {
+  min-height: 70vh;
+  place-content: center;
+}
+
+.stateCard {
+  background: #fff;
+  border-style: solid;
+  flex-direction: column;
+  max-width: 480px;
+  text-align: center;
+}
+
+.linkButton,
+.logoutButton {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d9e0ea;
+  border-radius: 999px;
+  color: #344054;
+  display: inline-flex;
+  font-weight: 800;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+.linkButton.started {
+  background: #eef4ff;
+  border-color: #bcd2ff;
+  color: #0758ff;
+}
+
+.linkButton.completed {
+  background: #e8f7ef;
+  border-color: #b7e4c7;
+  color: #157347;
+}
+
+.linkButton.expired {
+  background: #fff1f3;
+  border-color: #fecdd3;
+  color: #c01048;
+}
+
+.linkButton:disabled,
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .examPage {
@@ -701,6 +806,29 @@ th {
 
 .examNav {
   color: #475467;
+}
+
+.examProgress {
+  background: #fff;
+  border: 1px solid #e7ebf2;
+  border-radius: 10px;
+  display: grid;
+  gap: 2px;
+  margin-top: 18px;
+  padding: 14px;
+}
+
+.examProgress strong {
+  color: #0758ff;
+  font-size: 22px;
+}
+
+.questionMeta {
+  align-items: center;
+  color: #667085;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-start;
 }
 
 .numberGrid {
@@ -944,7 +1072,9 @@ th {
 
   .metricsGrid,
   .choiceGrid,
-  .formGrid {
+  .formGrid,
+  .questionFormGrid,
+  .questionFormGrid.wideFields {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -971,14 +1101,17 @@ th {
 
   .metricsGrid,
   .choiceGrid,
-  .formGrid {
+  .formGrid,
+  .questionFormGrid,
+  .questionFormGrid.wideFields {
     grid-template-columns: 1fr;
   }
 
   .panelTitle,
   .pageHeader,
   .footerActions,
-  .inlineForm {
+  .inlineForm,
+  .questionFormHeader {
     align-items: stretch;
     flex-direction: column;
   }
@@ -1027,6 +1160,8 @@ th {
 .actions a,
 .actions button,
 .questionRow button,
+.linkButton,
+.logoutButton,
 .sidebar nav a,
 .badge,
 .tag,
@@ -1178,7 +1313,9 @@ td strong {
 
 .actions a:hover,
 .actions button:hover,
-.questionRow button:hover {
+.questionRow button:hover,
+.linkButton:hover,
+.logoutButton:hover {
   background: #eef4ff;
   border-color: #bcd2ff;
   color: #0758ff;

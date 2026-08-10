@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { createId, hashPassword } from "./auth.js";
 
 const dataDir = path.resolve(process.cwd(), "data");
 
@@ -40,6 +41,21 @@ export type DbCandidate = {
   email: string;
   status: "approved" | "review" | "pending";
   createdAt: string;
+};
+
+export type DbInvitation = {
+  id: string;
+  companyId: string;
+  candidateId: string;
+  testId: string;
+  token: string;
+  status: "invited" | "started" | "completed" | "expired";
+  createdAt: string;
+  expiresAt: string;
+  completedAt: string | null;
+  candidateName?: string;
+  candidateEmail?: string;
+  testTitle?: string;
 };
 
 export type DbSubmission = {
@@ -155,6 +171,21 @@ export function initializeDatabase() {
       createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS invitations (
+      id TEXT PRIMARY KEY,
+      companyId TEXT NOT NULL,
+      candidateId TEXT NOT NULL,
+      testId TEXT NOT NULL,
+      token TEXT NOT NULL UNIQUE,
+      status TEXT NOT NULL DEFAULT 'invited',
+      createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      expiresAt TEXT NOT NULL,
+      completedAt TEXT,
+      FOREIGN KEY (companyId) REFERENCES companies(id),
+      FOREIGN KEY (candidateId) REFERENCES candidates(id),
+      FOREIGN KEY (testId) REFERENCES tests(id)
+    );
+
     CREATE TABLE IF NOT EXISTS submissions (
       id TEXT PRIMARY KEY,
       candidateId TEXT NOT NULL,
@@ -173,6 +204,7 @@ export function initializeDatabase() {
 export function resetDatabase() {
   db.exec(`
     DROP TABLE IF EXISTS submissions;
+    DROP TABLE IF EXISTS invitations;
     DROP TABLE IF EXISTS candidates;
     DROP TABLE IF EXISTS questions;
     DROP TABLE IF EXISTS tests;
@@ -201,7 +233,7 @@ export function seedDatabase() {
     "company-demo",
     "Marina Duarte",
     "recrutador@techsolutions.com",
-    "123456",
+    hashPassword("123456"),
     "recruiter",
     createdAt
   );
@@ -422,6 +454,10 @@ export function seedDatabase() {
   ];
 
   const insertCandidate = db.prepare("INSERT INTO candidates (id, name, email, status, createdAt) VALUES (?, ?, ?, ?, ?)");
+  const insertInvitation = db.prepare(`
+    INSERT INTO invitations (id, companyId, candidateId, testId, token, status, createdAt, expiresAt, completedAt)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
   const insertSubmission = db.prepare(`
     INSERT INTO submissions (id, candidateId, testId, score, answers, durationSeconds, startedAt, finishedAt)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -429,6 +465,19 @@ export function seedDatabase() {
 
   candidates.forEach((candidate) => {
     insertCandidate.run(candidate.id, candidate.name, candidate.email, candidate.status, candidate.createdAt);
+    const firstSubmission = candidate.submissions?.[0];
+    const testId = firstSubmission?.testId ?? "test-frontend-pleno";
+    insertInvitation.run(
+      createId("invite"),
+      "company-demo",
+      candidate.id,
+      testId,
+      createId("token"),
+      firstSubmission ? "completed" : "invited",
+      candidate.createdAt,
+      daysAgo(-14),
+      firstSubmission?.finishedAt ?? null
+    );
     candidate.submissions?.forEach((submission) => {
       insertSubmission.run(
         submission.id,

@@ -1,4 +1,4 @@
-import { Cloud, Database, Server, Trophy } from "lucide-react";
+import { Cloud, Database, Server, Trophy, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MetricCard } from "../components/MetricCard";
 import { api, type ReportsResponse } from "../services/api";
@@ -14,6 +14,7 @@ export function Reports() {
     return <div className="loading">Carregando relatórios...</div>;
   }
 
+  const totalInvitations = reports.tests.reduce((sum, test) => sum + test.invitations, 0);
   const totalSubmissions = reports.tests.reduce((sum, test) => sum + test.submissions, 0);
   const scoredTests = reports.tests.filter((test) => test.submissions > 0);
   const averageScore = scoredTests.length
@@ -31,10 +32,10 @@ export function Reports() {
       </header>
 
       <div className="metricsGrid">
-        <MetricCard label="Submissões concluídas" value={totalSubmissions} icon={Server} />
+        <MetricCard label="Convites enviados" value={totalInvitations} icon={Users} />
+        <MetricCard label="Submissões concluídas" value={totalSubmissions} icon={Server} tone="teal" />
         <MetricCard label="Média dos testes" value={`${averageScore}%`} icon={Trophy} tone="amber" />
-        <MetricCard label="Candidatos aprovados" value={approved} icon={Trophy} tone="green" />
-        <MetricCard label="Cloud alvo" value={reports.cloudPlan.provider} icon={Cloud} tone="teal" />
+        <MetricCard label="Aprovados" value={approved} icon={Trophy} tone="green" />
       </div>
 
       <div className="splitGrid">
@@ -45,7 +46,9 @@ export function Reports() {
               <tr>
                 <th>Teste</th>
                 <th>Status</th>
+                <th>Convites</th>
                 <th>Submissões</th>
+                <th>Conclusão</th>
                 <th>Média</th>
               </tr>
             </thead>
@@ -53,8 +56,14 @@ export function Reports() {
               {reports.tests.map((test) => (
                 <tr key={test.id}>
                   <td>{test.title}</td>
-                  <td><span className={`badge ${test.status}`}>{test.status === "active" ? "Ativo" : test.status === "draft" ? "Rascunho" : "Finalizado"}</span></td>
+                  <td>
+                    <span className={`badge ${test.status}`}>
+                      {test.status === "active" ? "Ativo" : test.status === "draft" ? "Rascunho" : "Finalizado"}
+                    </span>
+                  </td>
+                  <td>{test.invitations}</td>
                   <td>{test.submissions}</td>
+                  <td>{test.completionRate}%</td>
                   <td>{test.averageScore}%</td>
                 </tr>
               ))}
