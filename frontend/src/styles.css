@@ -451,6 +451,10 @@ select:focus {
   grid-template-columns: minmax(300px, 420px) 1fr;
 }
 
+.reportsGrid {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+}
+
 .panel,
 .builderPanel,
 .resultCard {
@@ -465,6 +469,30 @@ table {
   border-collapse: collapse;
   margin: 14px 0;
   width: 100%;
+}
+
+.tableScroller {
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tableScroller table {
+  margin-bottom: 0;
+}
+
+.reportTable {
+  min-width: 760px;
+}
+
+.candidateTable {
+  min-width: 980px;
+}
+
+.wrapCell {
+  max-width: 260px;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 th,
@@ -538,6 +566,80 @@ th {
 .badge.review {
   background: #eef4ff;
   color: #0758ff;
+}
+
+.badge.rejected {
+  background: #fff1f3;
+  color: #c01048;
+}
+
+.decisionActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.decisionButton {
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d9e0ea;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+.decisionButton.approve {
+  color: #157347;
+}
+
+.decisionButton.reject {
+  color: #c01048;
+}
+
+.decisionButton.approve:hover {
+  background: #e8f7ef;
+  border-color: #b7e4c7;
+}
+
+.decisionButton.reject:hover {
+  background: #fff1f3;
+  border-color: #fecdd3;
+}
+
+.completionCell {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(90px, 1fr) auto;
+  min-width: 150px;
+}
+
+.miniProgress {
+  background: #e7ebf2;
+  border-radius: 999px;
+  display: block;
+  height: 8px;
+  overflow: hidden;
+}
+
+.miniProgress i {
+  background: linear-gradient(90deg, #0758ff, #42d8b5);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.cloudPanel {
+  overflow: hidden;
+}
+
+.cloudPanel strong,
+.cloudList strong {
+  overflow-wrap: anywhere;
 }
 
 .donut {
@@ -1045,6 +1147,60 @@ button:disabled {
   padding: 30px;
 }
 
+.skeletonCard {
+  pointer-events: none;
+}
+
+.skeletonBlock {
+  animation: shimmer 1.35s ease-in-out infinite;
+  background: linear-gradient(90deg, #edf2f7 0%, #f8fbff 45%, #edf2f7 100%);
+  background-size: 220% 100%;
+  border-radius: 999px;
+  display: block;
+  height: 14px;
+}
+
+.skeletonBlock.icon {
+  border-radius: 10px;
+  height: 38px;
+  width: 38px;
+}
+
+.skeletonBlock.short {
+  margin-bottom: 10px;
+  width: 88px;
+}
+
+.skeletonBlock.medium {
+  height: 22px;
+  width: 140px;
+}
+
+.skeletonBlock.long {
+  width: min(260px, 100%);
+}
+
+.eyebrowSkeleton {
+  height: 14px;
+  margin-bottom: 12px;
+  width: 120px;
+}
+
+.titleSkeleton {
+  height: 34px;
+  margin: 0 0 12px;
+  width: min(360px, 80vw);
+}
+
+.subtitleSkeleton {
+  height: 14px;
+  width: min(520px, 78vw);
+}
+
+.skeletonTable td {
+  border-bottom: 1px solid #eef1f6;
+}
+
 @media (max-width: 980px) {
   .loginPage,
   .appShell,
@@ -1143,6 +1299,19 @@ button:disabled {
   --shadow-lift: 0 24px 70px rgba(16, 24, 40, 0.13);
 }
 
+.page,
+.examPage,
+.loginPage {
+  animation: pageEnter 460ms var(--ease-out) both;
+}
+
+.panel,
+.metricCard,
+.builderPanel,
+.resultCard {
+  animation: cardEnter 520ms var(--ease-out) both;
+}
+
 ::selection {
   background: rgba(7, 88, 255, 0.16);
 }
@@ -1161,6 +1330,7 @@ button:disabled {
 .actions button,
 .questionRow button,
 .linkButton,
+.decisionButton,
 .logoutButton,
 .sidebar nav a,
 .badge,
@@ -1315,11 +1485,24 @@ td strong {
 .actions button:hover,
 .questionRow button:hover,
 .linkButton:hover,
+.decisionButton:hover,
 .logoutButton:hover {
   background: #eef4ff;
   border-color: #bcd2ff;
   color: #0758ff;
   transform: translateY(-2px);
+}
+
+.decisionButton.approve:hover {
+  background: #e8f7ef;
+  border-color: #b7e4c7;
+  color: #157347;
+}
+
+.decisionButton.reject:hover {
+  background: #fff1f3;
+  border-color: #fecdd3;
+  color: #c01048;
 }
 
 .badge:hover,
@@ -1383,6 +1566,37 @@ td strong {
   to {
     opacity: 1;
     transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 220% 0;
+  }
+  100% {
+    background-position: -220% 0;
+  }
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

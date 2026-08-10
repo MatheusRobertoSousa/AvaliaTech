@@ -79,7 +79,7 @@ export type Candidate = {
   testTitle: string;
   score: number;
   time: string;
-  status: "approved" | "review" | "pending";
+  status: "approved" | "review" | "pending" | "rejected";
   invitationStatus?: "invited" | "started" | "completed" | "expired";
   inviteUrl?: string;
 };
@@ -117,7 +117,7 @@ export type InvitationExam = {
 
 export type ReportsResponse = {
   tests: Array<{ id: string; title: string; status: string; invitations: number; submissions: number; completionRate: number; averageScore: number }>;
-  candidates: Array<{ status: "approved" | "review" | "pending"; total: number }>;
+  candidates: Array<{ status: "approved" | "review" | "pending" | "rejected"; total: number }>;
   bestCandidates: Array<{ name: string; testTitle: string; score: number; time: string }>;
   cloudPlan: {
     provider: string;

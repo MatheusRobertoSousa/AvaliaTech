@@ -1,6 +1,7 @@
-import { Copy, Mail, Send } from "lucide-react";
+import { CheckCircle2, Copy, Mail, Send, XCircle } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { MetricSkeleton, TableSkeleton } from "../components/Skeleton";
 import { api, type AssessmentTest, type Candidate, type CandidateInvite } from "../services/api";
 
 const invitationLabels: Record<string, string> = {
@@ -8,6 +9,13 @@ const invitationLabels: Record<string, string> = {
   started: "Prova iniciada",
   completed: "Concluído",
   expired: "Expirado"
+};
+
+const candidateStatusLabels: Record<Candidate["status"], string> = {
+  approved: "Aprovado",
+  review: "Em revisão",
+  pending: "Pendente",
+  rejected: "Recusado"
 };
 
 export function Candidates() {
@@ -19,17 +27,21 @@ export function Candidates() {
   const [email, setEmail] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [decidingCandidateId, setDecidingCandidateId] = useState("");
 
   function loadCandidates() {
-    api.get<Candidate[]>("/candidates").then((response) => setCandidates(response.data));
+    return api.get<Candidate[]>("/candidates").then((response) => setCandidates(response.data));
   }
 
   useEffect(() => {
-    api.get<AssessmentTest[]>("/tests").then((response) => {
-      setTests(response.data);
-      setSelectedTestId((current) => current || response.data[0]?.id || "");
-    });
-    loadCandidates();
+    Promise.all([
+      api.get<AssessmentTest[]>("/tests").then((response) => {
+        setTests(response.data);
+        setSelectedTestId((current) => current || response.data[0]?.id || "");
+      }),
+      loadCandidates()
+    ]).finally(() => setLoading(false));
   }, []);
 
   async function inviteCandidate(event: FormEvent) {
@@ -42,7 +54,7 @@ export function Candidates() {
       setInviteUrl(`${window.location.origin}${response.data.inviteUrl}`);
       setName("");
       setEmail("");
-      loadCandidates();
+      await loadCandidates();
     } finally {
       setSaving(false);
     }
@@ -58,91 +70,139 @@ export function Candidates() {
     await navigator.clipboard.writeText(`${window.location.origin}${candidate.inviteUrl}`);
   }
 
+  async function decideCandidate(candidate: Candidate, status: "approved" | "rejected") {
+    setDecidingCandidateId(candidate.id);
+    try {
+      const response = await api.patch<Candidate>(`/candidates/${candidate.id}/status`, { status });
+      setCandidates((current) => current.map((item) => item.id === candidate.id ? response.data : item));
+    } finally {
+      setDecidingCandidateId("");
+    }
+  }
+
   return (
     <section className="page">
       <header className="pageHeader">
         <div>
           <h1>Candidatos</h1>
-          <p>Convide pessoas, acompanhe pendências e monitore resultados por avaliação.</p>
+          <p>Convide pessoas, acompanhe pendências e decida candidatos em revisão.</p>
         </div>
       </header>
 
-      <div className="splitGrid">
-        <article className="panel">
-          <h2>Novo convite</h2>
-          <form onSubmit={inviteCandidate}>
-            <label>Teste
-              <select value={selectedTestId} onChange={(event) => setSelectedTestId(event.target.value)}>
-                {tests.map((test) => <option value={test.id} key={test.id}>{test.title}</option>)}
-              </select>
-            </label>
-            <label>Nome do candidato
-              <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Carla Mendes" />
-            </label>
-            <label>E-mail
-              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="candidato@email.com" />
-            </label>
-            <button className="primaryButton" disabled={!selectedTestId || !name || !email || saving}>
-              <Send size={16} /> {saving ? "Gerando..." : "Gerar convite"}
-            </button>
-          </form>
-          {inviteUrl && (
-            <div className="inviteBox">
-              <span><Mail size={16} /> Link pronto para envio ao candidato</span>
-              <strong>{inviteUrl}</strong>
-              <button className="secondaryButton" onClick={copyInvite}><Copy size={16} /> Copiar link</button>
-            </div>
-          )}
-        </article>
+      {loading ? (
+        <>
+          <MetricSkeleton count={3} />
+          <article className="panel wide">
+            <TableSkeleton rows={6} columns={7} />
+          </article>
+        </>
+      ) : (
+        <div className="splitGrid">
+          <article className="panel">
+            <h2>Novo convite</h2>
+            <form onSubmit={inviteCandidate}>
+              <label>Teste
+                <select value={selectedTestId} onChange={(event) => setSelectedTestId(event.target.value)}>
+                  {tests.map((test) => <option value={test.id} key={test.id}>{test.title}</option>)}
+                </select>
+              </label>
+              <label>Nome do candidato
+                <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Carla Mendes" />
+              </label>
+              <label>E-mail
+                <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="candidato@email.com" />
+              </label>
+              <button className="primaryButton" disabled={!selectedTestId || !name || !email || saving}>
+                <Send size={16} /> {saving ? "Gerando..." : "Gerar convite"}
+              </button>
+            </form>
+            {inviteUrl && (
+              <div className="inviteBox">
+                <span><Mail size={16} /> Link pronto para envio ao candidato</span>
+                <strong>{inviteUrl}</strong>
+                <button className="secondaryButton" onClick={copyInvite}><Copy size={16} /> Copiar link</button>
+              </div>
+            )}
+          </article>
 
-        <article className="panel wide">
-          <div className="panelTitle">
-            <div>
-              <h2>Pipeline de candidatos</h2>
-              <p>{candidates.length} pessoas cadastradas no processo seletivo</p>
+          <article className="panel wide">
+            <div className="panelTitle">
+              <div>
+                <h2>Pipeline de candidatos</h2>
+                <p>{candidates.length} pessoas cadastradas no processo seletivo</p>
+              </div>
             </div>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                <th>Candidato</th>
-                <th>E-mail</th>
-                <th>Teste</th>
-                <th>Pontuação</th>
-                <th>Status</th>
-                <th>Convite</th>
-              </tr>
-            </thead>
-            <tbody>
-              {candidates.map((candidate) => (
-                <tr key={candidate.id}>
-                  <td>{candidate.name}</td>
-                  <td>{candidate.email}</td>
-                  <td>{candidate.testTitle}</td>
-                  <td>{candidate.score ? `${candidate.score}%` : "-"}</td>
-                  <td>
-                    <span className={`badge ${candidate.status}`}>
-                      {candidate.status === "approved" ? "Aprovado" : candidate.status === "review" ? "Em revisão" : "Pendente"}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      className={`linkButton ${candidate.invitationStatus ?? "invited"}`}
-                      type="button"
-                      onClick={() => copyCandidateInvite(candidate)}
-                      disabled={!candidate.inviteUrl || candidate.invitationStatus === "completed"}
-                      title={candidate.inviteUrl ? "Copiar link do convite" : "Sem convite ativo"}
-                    >
-                      <Copy size={14} />
-                      {invitationLabels[candidate.invitationStatus ?? "invited"] ?? "Convite"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </article>
-      </div>
+            <div className="tableScroller">
+              <table className="candidateTable">
+                <thead>
+                  <tr>
+                    <th>Candidato</th>
+                    <th>E-mail</th>
+                    <th>Teste</th>
+                    <th>Pontuação</th>
+                    <th>Status</th>
+                    <th>Convite</th>
+                    <th>Decisão</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {candidates.map((candidate) => (
+                    <tr key={candidate.id}>
+                      <td>{candidate.name}</td>
+                      <td>{candidate.email}</td>
+                      <td>{candidate.testTitle}</td>
+                      <td>{candidate.score ? `${candidate.score}%` : "-"}</td>
+                      <td>
+                        <span className={`badge ${candidate.status}`}>
+                          {candidateStatusLabels[candidate.status]}
+                        </span>
+                      </td>
+                      <td>
+                        <button
+                          className={`linkButton ${candidate.invitationStatus ?? "invited"}`}
+                          type="button"
+                          onClick={() => copyCandidateInvite(candidate)}
+                          disabled={!candidate.inviteUrl || candidate.invitationStatus === "completed"}
+                          title={candidate.inviteUrl ? "Copiar link do convite" : "Sem convite ativo"}
+                        >
+                          <Copy size={14} />
+                          {invitationLabels[candidate.invitationStatus ?? "invited"] ?? "Convite"}
+                        </button>
+                      </td>
+                      <td>
+                        {candidate.status === "review" ? (
+                          <div className="decisionActions">
+                            <button
+                              type="button"
+                              className="decisionButton approve"
+                              disabled={decidingCandidateId === candidate.id}
+                              onClick={() => decideCandidate(candidate, "approved")}
+                            >
+                              <CheckCircle2 size={14} /> Aprovar
+                            </button>
+                            <button
+                              type="button"
+                              className="decisionButton reject"
+                              disabled={decidingCandidateId === candidate.id}
+                              onClick={() => decideCandidate(candidate, "rejected")}
+                            >
+                              <XCircle size={14} /> Recusar
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="mutedText">
+                            {candidate.status === "pending" ? "Aguardando prova" : "Decidido"}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      )}
     </section>
   );
 }

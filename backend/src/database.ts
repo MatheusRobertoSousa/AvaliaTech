@@ -39,7 +39,7 @@ export type DbCandidate = {
   id: string;
   name: string;
   email: string;
-  status: "approved" | "review" | "pending";
+  status: "approved" | "review" | "pending" | "rejected";
   createdAt: string;
 };
 
@@ -99,7 +99,7 @@ type SeedCandidate = {
   id: string;
   name: string;
   email: string;
-  status: "approved" | "review" | "pending";
+  status: "approved" | "review" | "pending" | "rejected";
   createdAt: string;
   submissions?: Array<{
     id: string;

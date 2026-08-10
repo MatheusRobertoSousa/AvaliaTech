@@ -2,6 +2,7 @@ import { ArrowRight, ClipboardCheck, Edit, Plus, Trash2, Users, Zap } from "luci
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { MetricCard } from "../components/MetricCard";
+import { PageSkeleton } from "../components/Skeleton";
 import { api, type DashboardResponse } from "../services/api";
 
 export function Dashboard() {
@@ -21,7 +22,7 @@ export function Dashboard() {
   }
 
   if (!dashboard) {
-    return <div className="loading">Carregando dashboard...</div>;
+    return <PageSkeleton columns={7} />;
   }
 
   return (

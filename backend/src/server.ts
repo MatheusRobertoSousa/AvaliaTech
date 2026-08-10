@@ -556,6 +556,50 @@ app.post("/candidates", requireAuth, (request: AuthenticatedRequest, response) =
   });
 });
 
+app.patch("/candidates/:id/status", requireAuth, (request: AuthenticatedRequest, response) => {
+  const candidateId = String(request.params.id);
+  const schema = z.object({
+    status: z.enum(["approved", "review", "pending", "rejected"])
+  });
+  const result = schema.safeParse(request.body);
+
+  if (!result.success) {
+    return response.status(400).json({ message: "Status do candidato inválido." });
+  }
+
+  const candidate = db.prepare(`
+    SELECT candidates.id
+    FROM candidates
+    JOIN invitations ON invitations.candidateId = candidates.id
+    WHERE candidates.id = ?
+    AND invitations.companyId = ?
+    LIMIT 1
+  `).get(candidateId, request.auth!.companyId) as { id: string } | undefined;
+
+  if (!candidate) {
+    return response.status(404).json({ message: "Candidato não encontrado." });
+  }
+
+  db.prepare("UPDATE candidates SET status = ? WHERE id = ?").run(result.data.status, candidateId);
+  const updatedCandidate = getCandidatePipeline(request.auth!.companyId).find((item) => item.id === candidateId);
+
+  if (!updatedCandidate) {
+    return response.status(404).json({ message: "Candidato não encontrado." });
+  }
+
+  response.json({
+    id: updatedCandidate.id,
+    name: updatedCandidate.name,
+    email: updatedCandidate.email,
+    status: updatedCandidate.status,
+    invitationStatus: updatedCandidate.invitationStatus,
+    testTitle: updatedCandidate.testTitle,
+    score: updatedCandidate.score ?? 0,
+    time: formatDuration(updatedCandidate.durationSeconds),
+    inviteUrl: `/exam?invite=${updatedCandidate.invitationToken}`
+  });
+});
+
 app.get("/invitations/:token", (request, response) => {
   const token = String(request.params.token);
   const invitation = db.prepare(`
