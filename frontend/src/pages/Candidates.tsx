@@ -93,11 +93,11 @@ export function Candidates() {
         <>
           <MetricSkeleton count={3} />
           <article className="panel wide">
-            <TableSkeleton rows={6} columns={7} />
+            <TableSkeleton rows={6} columns={5} />
           </article>
         </>
       ) : (
-        <div className="splitGrid">
+        <div className="splitGrid candidatesGrid">
           <article className="panel">
             <h2>Novo convite</h2>
             <form onSubmit={inviteCandidate}>
@@ -125,80 +125,78 @@ export function Candidates() {
             )}
           </article>
 
-          <article className="panel wide">
+          <article className="panel wide candidatePanel">
             <div className="panelTitle">
               <div>
                 <h2>Pipeline de candidatos</h2>
                 <p>{candidates.length} pessoas cadastradas no processo seletivo</p>
               </div>
             </div>
-            <div className="tableScroller">
-              <table className="candidateTable">
-                <thead>
-                  <tr>
-                    <th>Candidato</th>
-                    <th>E-mail</th>
-                    <th>Teste</th>
-                    <th>Pontuação</th>
-                    <th>Status</th>
-                    <th>Convite</th>
-                    <th>Decisão</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {candidates.map((candidate) => (
-                    <tr key={candidate.id}>
-                      <td>{candidate.name}</td>
-                      <td>{candidate.email}</td>
-                      <td>{candidate.testTitle}</td>
-                      <td>{candidate.score ? `${candidate.score}%` : "-"}</td>
-                      <td>
-                        <span className={`badge ${candidate.status}`}>
-                          {candidateStatusLabels[candidate.status]}
-                        </span>
-                      </td>
-                      <td>
+
+            <div className="candidatePipeline">
+              {candidates.map((candidate) => (
+                <article className="candidateCardRow" key={candidate.id}>
+                  <div className="candidateIdentity">
+                    <strong>{candidate.name}</strong>
+                    <span>{candidate.email}</span>
+                  </div>
+
+                  <div className="candidateMeta">
+                    <small>Teste</small>
+                    <strong>{candidate.testTitle}</strong>
+                  </div>
+
+                  <div className="candidateScore">
+                    <small>Pontuação</small>
+                    <strong>{candidate.score ? `${candidate.score}%` : "-"}</strong>
+                  </div>
+
+                  <div className="candidateStatus">
+                    <small>Status</small>
+                    <span className={`badge ${candidate.status}`}>
+                      {candidateStatusLabels[candidate.status]}
+                    </span>
+                  </div>
+
+                  <div className="candidateActions">
+                    <button
+                      className={`linkButton ${candidate.invitationStatus ?? "invited"}`}
+                      type="button"
+                      onClick={() => copyCandidateInvite(candidate)}
+                      disabled={!candidate.inviteUrl || candidate.invitationStatus === "completed"}
+                      title={candidate.inviteUrl ? "Copiar link do convite" : "Sem convite ativo"}
+                    >
+                      <Copy size={14} />
+                      {invitationLabels[candidate.invitationStatus ?? "invited"] ?? "Convite"}
+                    </button>
+
+                    {candidate.status === "review" ? (
+                      <div className="decisionActions">
                         <button
-                          className={`linkButton ${candidate.invitationStatus ?? "invited"}`}
                           type="button"
-                          onClick={() => copyCandidateInvite(candidate)}
-                          disabled={!candidate.inviteUrl || candidate.invitationStatus === "completed"}
-                          title={candidate.inviteUrl ? "Copiar link do convite" : "Sem convite ativo"}
+                          className="decisionButton approve"
+                          disabled={decidingCandidateId === candidate.id}
+                          onClick={() => decideCandidate(candidate, "approved")}
                         >
-                          <Copy size={14} />
-                          {invitationLabels[candidate.invitationStatus ?? "invited"] ?? "Convite"}
+                          <CheckCircle2 size={14} /> Aprovar
                         </button>
-                      </td>
-                      <td>
-                        {candidate.status === "review" ? (
-                          <div className="decisionActions">
-                            <button
-                              type="button"
-                              className="decisionButton approve"
-                              disabled={decidingCandidateId === candidate.id}
-                              onClick={() => decideCandidate(candidate, "approved")}
-                            >
-                              <CheckCircle2 size={14} /> Aprovar
-                            </button>
-                            <button
-                              type="button"
-                              className="decisionButton reject"
-                              disabled={decidingCandidateId === candidate.id}
-                              onClick={() => decideCandidate(candidate, "rejected")}
-                            >
-                              <XCircle size={14} /> Recusar
-                            </button>
-                          </div>
-                        ) : (
-                          <span className="mutedText">
-                            {candidate.status === "pending" ? "Aguardando prova" : "Decidido"}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <button
+                          type="button"
+                          className="decisionButton reject"
+                          disabled={decidingCandidateId === candidate.id}
+                          onClick={() => decideCandidate(candidate, "rejected")}
+                        >
+                          <XCircle size={14} /> Recusar
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="mutedText">
+                        {candidate.status === "pending" ? "Aguardando prova" : "Decidido"}
+                      </span>
+                    )}
+                  </div>
+                </article>
+              ))}
             </div>
           </article>
         </div>

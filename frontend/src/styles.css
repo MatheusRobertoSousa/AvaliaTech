@@ -455,6 +455,10 @@ select:focus {
   grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
 }
 
+.candidatesGrid {
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+}
+
 .panel,
 .builderPanel,
 .resultCard {
@@ -487,6 +491,72 @@ table {
 
 .candidateTable {
   min-width: 980px;
+}
+
+.candidatePanel {
+  overflow: hidden;
+}
+
+.candidatePipeline {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.candidateCardRow {
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(248, 251, 255, 0.92), rgba(255, 255, 255, 1));
+  border: 1px solid #e7ebf2;
+  border-radius: 14px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(170px, 1.2fr) minmax(180px, 1fr) 86px 112px minmax(180px, auto);
+  padding: 16px;
+}
+
+.candidateIdentity,
+.candidateMeta,
+.candidateScore,
+.candidateStatus,
+.candidateActions {
+  min-width: 0;
+}
+
+.candidateIdentity,
+.candidateMeta,
+.candidateScore,
+.candidateStatus {
+  display: grid;
+  gap: 4px;
+}
+
+.candidateIdentity span,
+.candidateMeta strong,
+.candidateActions .mutedText {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.candidateIdentity span,
+.candidateMeta small,
+.candidateScore small,
+.candidateStatus small {
+  color: #667085;
+  font-size: 12px;
+}
+
+.candidateScore strong {
+  color: #0758ff;
+  font-size: 18px;
+}
+
+.candidateActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .wrapCell {
@@ -1237,6 +1307,20 @@ button:disabled {
   .examHeader {
     grid-template-columns: 1fr;
   }
+
+  .candidateCardRow {
+    align-items: flex-start;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .candidateIdentity,
+  .candidateActions {
+    grid-column: 1 / -1;
+  }
+
+  .candidateActions {
+    justify-content: flex-start;
+  }
 }
 
 @media (max-width: 700px) {
@@ -1290,6 +1374,25 @@ button:disabled {
   .numberGrid {
     grid-template-columns: repeat(auto-fit, 34px);
   }
+
+  .candidateCardRow {
+    grid-template-columns: 1fr;
+  }
+
+  .candidateIdentity,
+  .candidateActions {
+    grid-column: auto;
+  }
+
+  .linkButton,
+  .decisionButton {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .decisionActions {
+    width: 100%;
+  }
 }
 
 /* Premium interaction layer */
@@ -1323,6 +1426,7 @@ button:disabled {
 .panel,
 .builderPanel,
 .resultCard,
+.candidateCardRow,
 .choice,
 .answer,
 .miniCard,
@@ -1400,6 +1504,7 @@ select {
 .builderPanel:hover,
 .resultCard:hover,
 .metricCard:hover,
+.candidateCardRow:hover,
 .miniCard:hover {
   border-color: #d7e3f8;
   box-shadow: var(--shadow-lift);
