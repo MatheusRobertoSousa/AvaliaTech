@@ -3,75 +3,107 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model Company {
-  id        String   @id @default(cuid())
+  id        String   @id
   name      String
   email     String   @unique
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
   users     User[]
   tests     Test[]
+  invites   Invitation[]
+
+  @@map("companies")
 }
 
 model User {
-  id           String   @id @default(cuid())
-  companyId    String
+  id           String   @id
+  companyId    String   @map("company_id")
   name         String
   email        String   @unique
-  passwordHash String
+  passwordHash String   @map("password_hash")
   role         String
+  createdAt    DateTime @default(now()) @map("created_at")
   company      Company  @relation(fields: [companyId], references: [id])
-  createdAt    DateTime @default(now())
+
+  @@map("users")
 }
 
 model Test {
-  id              String       @id @default(cuid())
-  companyId       String
+  id              String       @id
+  companyId       String       @map("company_id")
   title           String
   description     String
   difficulty      String
-  durationMinutes Int
+  durationMinutes Int          @map("duration_minutes")
   status          String       @default("active")
+  createdAt       DateTime     @default(now()) @map("created_at")
   company         Company      @relation(fields: [companyId], references: [id])
   questions       Question[]
   submissions     Submission[]
-  createdAt       DateTime     @default(now())
+  invitations     Invitation[]
+
+  @@map("tests")
 }
 
 model Question {
-  id        String   @id @default(cuid())
-  testId    String
+  id        String   @id
+  testId    String   @map("test_id")
   statement String
   type      String
   score     Int
   category  String
-  options   Json?
+  options   String?
   answer    String?
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
   test      Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@map("questions")
 }
 
 model Candidate {
-  id          String       @id @default(cuid())
+  id          String       @id
   name        String
   email       String       @unique
   status      String       @default("pending")
-  createdAt   DateTime     @default(now())
+  createdAt   DateTime     @default(now()) @map("created_at")
   submissions Submission[]
+  invitations Invitation[]
+
+  @@map("candidates")
+}
+
+model Invitation {
+  id          String    @id
+  companyId   String    @map("company_id")
+  candidateId String    @map("candidate_id")
+  testId      String    @map("test_id")
+  token       String    @unique
+  status      String    @default("invited")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  expiresAt   DateTime  @map("expires_at")
+  completedAt DateTime? @map("completed_at")
+  company     Company   @relation(fields: [companyId], references: [id])
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+  test        Test      @relation(fields: [testId], references: [id])
+
+  @@map("invitations")
 }
 
 model Submission {
-  id          String    @id @default(cuid())
-  candidateId String
-  testId      String
-  score       Int
-  answers     Json?
-  durationSeconds Int?
-  startedAt   DateTime
-  finishedAt  DateTime?
-  candidate   Candidate @relation(fields: [candidateId], references: [id])
-  test        Test      @relation(fields: [testId], references: [id])
+  id              String     @id
+  candidateId     String     @map("candidate_id")
+  testId          String     @map("test_id")
+  score           Int
+  answers         String?
+  durationSeconds Int?       @map("duration_seconds")
+  startedAt       DateTime   @map("started_at")
+  finishedAt      DateTime?  @map("finished_at")
+  candidate       Candidate  @relation(fields: [candidateId], references: [id])
+  test            Test       @relation(fields: [testId], references: [id])
+
+  @@map("submissions")
 }

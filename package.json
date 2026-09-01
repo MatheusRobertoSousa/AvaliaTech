@@ -9,6 +9,7 @@
     "setup": "npm install && npm run db:setup",
     "db": "npm run db:setup",
     "db:setup": "npm run db:setup --workspace backend",
+    "db:check": "npm run db:check --workspace backend",
     "install:all": "npm install"
   },
   "workspaces": [

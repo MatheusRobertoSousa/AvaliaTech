@@ -1,31 +1,32 @@
 # AvaliaTech SaaS
 
-SaaS de recrutamento e avaliações técnicas para PMEs, com fluxo real de recrutador e candidato: login, banco de dados, criação de testes, CRUD de questões, convites por link, prova pública, correção automática, ranking, relatórios e decisão de candidatos.
+SaaS de recrutamento e avaliações técnicas para PMEs. Esta versão atende ao protótipo funcional de alta fidelidade: interface real, backend real, banco persistente, autenticação, fluxo de candidatos e preparação para banco em nuvem com AWS RDS PostgreSQL.
 
 Repositório: `https://github.com/MatheusRobertoSousa/AvaliaTech`
 
 ## Stack
 
 - Frontend: React, TypeScript, Vite, React Router, Axios e Lucide Icons.
-- Backend: Node.js, Express, TypeScript e Zod.
+- Backend: Node.js, Express, TypeScript, Zod e driver `pg`.
 - Banco local: SQLite via `node:sqlite`.
+- Banco cloud: PostgreSQL compatível com AWS RDS via `DATABASE_PROVIDER=postgres`.
 - Autenticação: senha hasheada com `scrypt` e token assinado.
-- Planejamento cloud: AWS com RDS PostgreSQL, S3 e ECS/Fargate.
+- Deploy sugerido: AWS RDS PostgreSQL, ECS/Fargate ou Elastic Beanstalk, S3/CloudFront.
 
 ## Requisitos
 
 - Node.js 24 ou superior.
 - npm 11 ou superior.
+- Docker opcional para testar PostgreSQL local.
 
-O backend usa `node:sqlite`; se aparecer erro relacionado ao SQLite nativo, atualize o Node.
-
-## Como rodar
+## Como rodar localmente
 
 Na raiz do projeto:
 
 ```bash
 npm install
 npm run db:setup
+npm run db:check
 npm run dev
 ```
 
@@ -39,12 +40,54 @@ Login demonstrativo:
 - E-mail: `recrutador@techsolutions.com`
 - Senha: `123456`
 
-## Modo apresentação
+## Banco em nuvem — AWS RDS PostgreSQL
+
+O backend possui uma camada de persistência dual. Por padrão usa SQLite local; para cloud, usa PostgreSQL com a mesma API e os mesmos fluxos.
+
+Exemplo de variáveis para produção:
+
+```env
+DATABASE_PROVIDER=postgres
+DATABASE_URL=postgresql://avaliatech:SENHA@avaliatech.xxxxxx.sa-east-1.rds.amazonaws.com:5432/avaliatech
+PGSSLMODE=require
+JWT_SECRET=um-segredo-forte-de-producao
+CORS_ORIGIN=https://dominio-do-front-end
+VITE_API_URL=https://dominio-da-api
+```
+
+Depois de configurar a conexão do RDS:
+
+```bash
+npm install
+npm run db:setup
+npm run db:check
+npm run build
+npm run start
+```
+
+O comando `npm run db:setup` cria as tabelas e popula dados fictícios realistas também no PostgreSQL.
+Use `npm run db:check` para confirmar se o backend está conectado ao provider esperado (`sqlite` ou `postgres`).
+
+## PostgreSQL local opcional
+
+Se tiver Docker instalado:
+
+```bash
+docker compose up -d postgres
+```
+
+Configure:
+
+```env
+DATABASE_PROVIDER=postgres
+DATABASE_URL=postgresql://avaliatech:avaliatech@localhost:5432/avaliatech
+```
+
+Então rode:
 
 ```bash
 npm run db:setup
-npm run build
-npm run start
+npm run dev
 ```
 
 ## Funcionalidades implementadas
@@ -63,20 +106,9 @@ npm run start
 - Aprovação ou recusa de candidatos em revisão.
 - Skeleton loading, animações de entrada e microinterações.
 
-## Banco de dados
-
-O SQLite é criado em `backend/data/avaliatech.sqlite` e não é versionado.
-
-Para recriar a base com dados fictícios realistas:
-
-```bash
-npm run db:setup
-```
-
-A base demonstrativa inclui empresa, usuário recrutador, testes, questões, convites, candidatos e submissões fictícias.
-
 ## Endpoints principais
 
+- `GET /health`
 - `POST /auth/login`
 - `POST /auth/register`
 - `GET /auth/me`
@@ -105,12 +137,14 @@ A base demonstrativa inclui empresa, usuário recrutador, testes, questões, con
 - `frontend/src/services/api.ts`: cliente HTTP, token e tipos compartilhados.
 - `backend/src/server.ts`: API REST.
 - `backend/src/auth.ts`: hash de senha, geração de IDs e tokens.
-- `backend/src/database.ts`: schema SQLite e seed.
-- `docs`: documentos da entrega e roteiro de teste de usabilidade.
+- `backend/src/database.ts`: camada dual SQLite/PostgreSQL, schema e seed.
+- `backend/prisma/schema.prisma`: schema de referência para PostgreSQL.
+- `docs/parte-4-prototipo-alta-fidelidade.md`: documentação da entrega de alta fidelidade e cloud.
 
 ## Problemas comuns
 
 - `'tsx' não é reconhecido`: rode `npm install` na raiz antes de executar scripts.
 - Tela padrão “Vite + React”: entre na raiz correta do AvaliaTech e rode `npm run dev`.
 - Banco vazio ou antigo: rode `npm run db:setup`.
+- Erro de `node:sqlite`: atualize para Node.js 24+.
 - Porta ocupada: encerre processos antigos de Node ou ajuste `PORT` e `VITE_API_URL`.
