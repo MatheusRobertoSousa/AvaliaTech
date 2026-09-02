@@ -1,17 +1,55 @@
 # AvaliaTech SaaS
 
-SaaS de recrutamento e avaliações técnicas para PMEs. Esta versão atende ao protótipo funcional de alta fidelidade: interface real, backend real, banco persistente, autenticação, fluxo de candidatos e preparação para banco em nuvem com AWS RDS PostgreSQL.
+Protótipo funcional de alta fidelidade desenvolvido para a Sprint da FIAP. O AvaliaTech é um SaaS de recrutamento e avaliações técnicas para PMEs, com interface front-end real, API back-end real, banco de dados persistente e arquitetura preparada para uso em nuvem AWS.
 
 Repositório: `https://github.com/MatheusRobertoSousa/AvaliaTech`
 
-## Stack
+## Status da Entrega FIAP
+
+Esta versão atende aos requisitos da etapa de protótipo funcional de alta fidelidade:
+
+- Interface web funcional com React e TypeScript.
+- Back-end funcional com Node.js, Express e TypeScript.
+- Banco de dados persistente com SQLite para demonstração local.
+- Camada de persistência preparada para PostgreSQL em nuvem.
+- Configuração compatível com AWS RDS PostgreSQL.
+- Fluxos reais de recrutador, candidato, prova, resultado, ranking e relatórios.
+
+## Observação Sobre AWS
+
+O projeto está tecnicamente adequado para uso em ambiente AWS, principalmente com:
+
+- AWS RDS PostgreSQL para banco de dados em nuvem.
+- AWS ECS/Fargate ou Elastic Beanstalk para hospedar a API.
+- AWS S3 + CloudFront ou AWS Amplify para publicar o front-end.
+- Variáveis de ambiente para alternar entre SQLite local e PostgreSQL em nuvem.
+
+No entanto, nesta entrega não foi realizado login, provisionamento ou deploy em uma conta AWS real, pois a equipe não possui uma conta AWS disponível/ativa para autenticação e criação dos recursos. Por isso, o projeto foi entregue com preparação cloud-ready, documentação de configuração e suporte técnico para conexão futura a um RDS PostgreSQL assim que uma conta AWS estiver disponível.
+
+## Funcionalidades Implementadas
+
+- Login e cadastro real de empresa/recrutador.
+- Autenticação com senha hasheada usando `scrypt` e token assinado.
+- Dashboard com métricas calculadas pelo banco.
+- Criação de testes com status, dificuldade e duração.
+- Banco de questões com criar, editar, duplicar e excluir.
+- Convite de candidatos com link individual para prova.
+- Tela pública de prova por token de convite.
+- Submissão de respostas com correção automática de questões objetivas.
+- Resultado individual por submissão.
+- Ranking ordenado por pontuação e tempo.
+- Relatórios com convites, submissões, taxa de conclusão e média.
+- Pipeline de candidatos em cards responsivos.
+- Aprovação ou recusa de candidatos em revisão.
+- Skeleton loading, animações de entrada e microinterações.
+
+## Stack Técnica
 
 - Frontend: React, TypeScript, Vite, React Router, Axios e Lucide Icons.
 - Backend: Node.js, Express, TypeScript, Zod e driver `pg`.
 - Banco local: SQLite via `node:sqlite`.
-- Banco cloud: PostgreSQL compatível com AWS RDS via `DATABASE_PROVIDER=postgres`.
-- Autenticação: senha hasheada com `scrypt` e token assinado.
-- Deploy sugerido: AWS RDS PostgreSQL, ECS/Fargate ou Elastic Beanstalk, S3/CloudFront.
+- Banco cloud planejado: PostgreSQL compatível com AWS RDS.
+- Deploy sugerido: AWS RDS, ECS/Fargate ou Elastic Beanstalk, S3/CloudFront.
 
 ## Requisitos
 
@@ -19,7 +57,7 @@ Repositório: `https://github.com/MatheusRobertoSousa/AvaliaTech`
 - npm 11 ou superior.
 - Docker opcional para testar PostgreSQL local.
 
-## Como rodar localmente
+## Como Rodar Localmente
 
 Na raiz do projeto:
 
@@ -33,18 +71,42 @@ npm run dev
 Acesse:
 
 - Frontend: `http://localhost:5173`
-- Backend: `http://localhost:3333`
+- Backend/API: `http://localhost:3333`
 
 Login demonstrativo:
 
 - E-mail: `recrutador@techsolutions.com`
 - Senha: `123456`
 
-## Banco em nuvem — AWS RDS PostgreSQL
+## Modo de Apresentação
 
-O backend possui uma camada de persistência dual. Por padrão usa SQLite local; para cloud, usa PostgreSQL com a mesma API e os mesmos fluxos.
+```bash
+npm run db:setup
+npm run build
+npm run start
+```
 
-Exemplo de variáveis para produção:
+## Banco de Dados
+
+O banco local SQLite é criado em `backend/data/avaliatech.sqlite` e não é versionado.
+
+Para recriar a base com dados fictícios realistas:
+
+```bash
+npm run db:setup
+```
+
+Para verificar a conexão atual:
+
+```bash
+npm run db:check
+```
+
+O retorno indica se o backend está usando `sqlite` ou `postgres`.
+
+## Configuração Para AWS RDS PostgreSQL
+
+Quando houver uma conta AWS disponível, crie uma instância PostgreSQL no Amazon RDS e configure as variáveis abaixo:
 
 ```env
 DATABASE_PROVIDER=postgres
@@ -55,7 +117,7 @@ CORS_ORIGIN=https://dominio-do-front-end
 VITE_API_URL=https://dominio-da-api
 ```
 
-Depois de configurar a conexão do RDS:
+Depois, execute:
 
 ```bash
 npm install
@@ -66,9 +128,8 @@ npm run start
 ```
 
 O comando `npm run db:setup` cria as tabelas e popula dados fictícios realistas também no PostgreSQL.
-Use `npm run db:check` para confirmar se o backend está conectado ao provider esperado (`sqlite` ou `postgres`).
 
-## PostgreSQL local opcional
+## PostgreSQL Local Opcional
 
 Se tiver Docker instalado:
 
@@ -90,23 +151,7 @@ npm run db:setup
 npm run dev
 ```
 
-## Funcionalidades implementadas
-
-- Login e cadastro real de empresa/recrutador.
-- Dashboard com métricas calculadas pelo banco.
-- Criação de testes com status, dificuldade e duração.
-- Banco de questões com criar, editar, duplicar e excluir.
-- Convite de candidatos com link individual para prova.
-- Tela pública de prova por token de convite.
-- Submissão com correção automática de questões objetivas.
-- Resultado individual por submissão.
-- Ranking ordenado por pontuação e tempo.
-- Relatórios com convites, submissões, conclusão e média.
-- Pipeline de candidatos em cards responsivos.
-- Aprovação ou recusa de candidatos em revisão.
-- Skeleton loading, animações de entrada e microinterações.
-
-## Endpoints principais
+## Endpoints Principais
 
 - `GET /health`
 - `POST /auth/login`
@@ -130,7 +175,7 @@ npm run dev
 - `GET /ranking`
 - `GET /reports`
 
-## Estrutura
+## Estrutura do Projeto
 
 - `frontend/src/pages`: telas do SaaS.
 - `frontend/src/components`: componentes reutilizáveis, incluindo skeleton loading.
@@ -141,7 +186,7 @@ npm run dev
 - `backend/prisma/schema.prisma`: schema de referência para PostgreSQL.
 - `docs/parte-4-prototipo-alta-fidelidade.md`: documentação da entrega de alta fidelidade e cloud.
 
-## Problemas comuns
+## Problemas Comuns
 
 - `'tsx' não é reconhecido`: rode `npm install` na raiz antes de executar scripts.
 - Tela padrão “Vite + React”: entre na raiz correta do AvaliaTech e rode `npm run dev`.
