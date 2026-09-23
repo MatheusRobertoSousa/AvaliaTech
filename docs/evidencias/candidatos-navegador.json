@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-09-17T02:26:18.914Z",
+  "people": 2,
+  "participations": 4,
+  "checks": [
+    "Todos os convites renderizados",
+    "Notas e status iguais à API",
+    "Atualização mantém ordem e registros",
+    "Sem erros JavaScript"
+  ],
+  "passed": true
+}

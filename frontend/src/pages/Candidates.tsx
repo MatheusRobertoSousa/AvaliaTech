@@ -29,6 +29,13 @@ export function Candidates() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [decidingCandidateId, setDecidingCandidateId] = useState("");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+
+  function showError(error: unknown) {
+    const message = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+    setError(message ?? "Não foi possível atualizar os candidatos. Tente novamente.");
+  }
 
   function loadCandidates() {
     return api.get<Candidate[]>("/candidates").then((response) => setCandidates(response.data));
@@ -41,7 +48,10 @@ export function Candidates() {
         setSelectedTestId((current) => current || response.data[0]?.id || "");
       }),
       loadCandidates()
-    ]).finally(() => setLoading(false));
+    ]).catch(showError).finally(() => setLoading(false));
+    const refresh = () => { loadCandidates().catch(showError); };
+    window.addEventListener("focus", refresh);
+    return () => window.removeEventListener("focus", refresh);
   }, []);
 
   async function inviteCandidate(event: FormEvent) {
@@ -49,12 +59,17 @@ export function Candidates() {
     if (!selectedTestId || !name.trim() || !email.trim() || saving) return;
 
     setSaving(true);
+    setError("");
+    setNotice("");
     try {
       const response = await api.post<CandidateInvite>("/candidates", { name, email, testId: selectedTestId });
       setInviteUrl(`${window.location.origin}${response.data.inviteUrl}`);
       setName("");
       setEmail("");
       await loadCandidates();
+      setNotice("Convite disponível. Um convite ainda ativo para o mesmo e-mail e teste é reutilizado.");
+    } catch (error) {
+      showError(error);
     } finally {
       setSaving(false);
     }
@@ -62,19 +77,22 @@ export function Candidates() {
 
   async function copyInvite() {
     if (!inviteUrl) return;
-    await navigator.clipboard.writeText(inviteUrl);
+    try { await navigator.clipboard.writeText(inviteUrl); setNotice("Link copiado."); } catch { setError("Não foi possível copiar. Selecione e copie o link do convite."); }
   }
 
   async function copyCandidateInvite(candidate: Candidate) {
     if (!candidate.inviteUrl) return;
-    await navigator.clipboard.writeText(`${window.location.origin}${candidate.inviteUrl}`);
+    try { await navigator.clipboard.writeText(`${window.location.origin}${candidate.inviteUrl}`); setNotice("Link copiado."); } catch { setError("Não foi possível copiar o link."); }
   }
 
-  async function decideCandidate(candidate: Candidate, status: "approved" | "rejected") {
-    setDecidingCandidateId(candidate.id);
+  async function decideCandidate(candidate: Candidate, status: "approved" | "rejected" | "review") {
+    setDecidingCandidateId(candidate.invitationId);
+    setError("");
     try {
-      const response = await api.patch<Candidate>(`/candidates/${candidate.id}/status`, { status });
-      setCandidates((current) => current.map((item) => item.id === candidate.id ? response.data : item));
+      const response = await api.patch<Candidate>(`/candidates/${candidate.id}/status`, { status, invitationId: candidate.invitationId });
+      setCandidates((current) => current.map((item) => item.invitationId === candidate.invitationId ? response.data : item));
+    } catch (error) {
+      showError(error);
     } finally {
       setDecidingCandidateId("");
     }
@@ -88,6 +106,9 @@ export function Candidates() {
           <p>Convide pessoas, acompanhe pendências e decida candidatos em revisão.</p>
         </div>
       </header>
+
+      {error && <div className="inlineAlert" role="alert">{error}</div>}
+      {notice && <p role="status">{notice}</p>}
 
       {loading ? (
         <>
@@ -129,13 +150,15 @@ export function Candidates() {
             <div className="panelTitle">
               <div>
                 <h2>Pipeline de candidatos</h2>
-                <p>{candidates.length} pessoas cadastradas no processo seletivo</p>
+                <p>{new Set(candidates.map(candidate => candidate.id)).size} pessoas · {candidates.length} participações. Cada convite mantém seu próprio resultado e decisão.</p>
               </div>
+              <button type="button" className="secondaryButton" onClick={() => { setError(""); loadCandidates().catch(showError); }}>Atualizar</button>
             </div>
 
             <div className="candidatePipeline">
+              {candidates.length === 0 && <p>Nenhum candidato convidado. Selecione um teste e gere o primeiro convite.</p>}
               {candidates.map((candidate) => (
-                <article className="candidateCardRow" key={candidate.id}>
+                <article className="candidateCardRow" key={candidate.invitationId}>
                   <div className="candidateIdentity">
                     <strong>{candidate.name}</strong>
                     <span>{candidate.email}</span>
@@ -148,7 +171,7 @@ export function Candidates() {
 
                   <div className="candidateScore">
                     <small>Pontuação</small>
-                    <strong>{candidate.score ? `${candidate.score}%` : "-"}</strong>
+                    <strong>{candidate.score !== null ? `${candidate.score}%` : "—"}</strong>
                   </div>
 
                   <div className="candidateStatus">
@@ -175,7 +198,7 @@ export function Candidates() {
                         <button
                           type="button"
                           className="decisionButton approve"
-                          disabled={decidingCandidateId === candidate.id}
+                          disabled={decidingCandidateId === candidate.invitationId}
                           onClick={() => decideCandidate(candidate, "approved")}
                         >
                           <CheckCircle2 size={14} /> Aprovar
@@ -183,16 +206,15 @@ export function Candidates() {
                         <button
                           type="button"
                           className="decisionButton reject"
-                          disabled={decidingCandidateId === candidate.id}
+                          disabled={decidingCandidateId === candidate.invitationId}
                           onClick={() => decideCandidate(candidate, "rejected")}
                         >
                           <XCircle size={14} /> Recusar
                         </button>
                       </div>
                     ) : (
-                      <span className="mutedText">
-                        {candidate.status === "pending" ? "Aguardando prova" : "Decidido"}
-                      </span>
+                      candidate.status === "pending" ? <span className="mutedText">Aguardando prova</span> :
+                        <button type="button" className="linkButton" disabled={decidingCandidateId === candidate.invitationId} onClick={() => decideCandidate(candidate, "review")}>Reabrir revisão</button>
                     )}
                   </div>
                 </article>

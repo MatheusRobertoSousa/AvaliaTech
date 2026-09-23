@@ -37,8 +37,8 @@ function getPostgres() {
 
     postgres = new Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.PGSSLMODE === "require" || process.env.DATABASE_SSL === "true"
-        ? { rejectUnauthorized: false }
+      ssl: ["require", "verify-full"].includes(process.env.PGSSLMODE ?? "") || process.env.DATABASE_SSL === "true"
+        ? { rejectUnauthorized: true }
         : undefined
     });
   }
@@ -47,6 +47,8 @@ function getPostgres() {
 }
 
 const postgresIdentifierReplacements: Array<[RegExp, string]> = [
+  [/\binvitationId\b/g, "invitation_id"],
+  [/\bdecisionStatus\b/g, "decision_status"],
   [/\bcompanyId\b/g, "company_id"],
   [/\bdurationMinutes\b/g, "duration_minutes"],
   [/\bpasswordHash\b/g, "password_hash"],
@@ -426,6 +428,18 @@ export async function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_invitations_candidate_test ON invitations(candidate_id, test_id);
     CREATE INDEX IF NOT EXISTS idx_submissions_test_id ON submissions(test_id);
   `);
+}
+
+export async function initializeRecruitmentSchema() {
+  // Additive migration: retain existing candidates, invitations and results.
+  if (databaseProvider === "postgres") {
+    await dbExec("ALTER TABLE invitations ADD COLUMN IF NOT EXISTS decisionStatus TEXT");
+  } else {
+    const columns = await dbAll<{ name: string }>("PRAGMA table_info(invitations)");
+    if (!columns.some(column => column.name === "decisionStatus")) {
+      await dbExec("ALTER TABLE invitations ADD COLUMN decisionStatus TEXT");
+    }
+  }
 }
 
 export async function resetDatabase() {

@@ -1,0 +1,416 @@
+{
+  "executedAt": "2026-09-17T01:32:26.787Z",
+  "baseURL": "https://avaliatech-156973.azurewebsites.net/api",
+  "requests": [
+    {
+      "method": "GET",
+      "route": "/ready",
+      "request": null,
+      "status": 200,
+      "response": {
+        "status": "ok",
+        "database": "postgres"
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/tests",
+      "request": null,
+      "status": 401,
+      "response": {
+        "message": "Sessão inválida ou expirada."
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/auth/register",
+      "request": {
+        "companyName": "Empresa fictícia — demonstração Azure",
+        "name": "Recrutador Demo",
+        "email": "demo-1789608747127@example.com",
+        "password": "[REDACTED]"
+      },
+      "status": 201,
+      "response": {
+        "token": "[REDACTED]",
+        "user": {
+          "id": "user-f06f601374816b36",
+          "name": "Recrutador Demo",
+          "email": "demo-1789608747127@example.com",
+          "role": "recruiter",
+          "company": "Empresa fictícia — demonstração Azure"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/auth/login",
+      "request": {
+        "email": "demo-1789608747127@example.com",
+        "password": "[REDACTED]"
+      },
+      "status": 200,
+      "response": {
+        "token": "[REDACTED]",
+        "user": {
+          "id": "user-f06f601374816b36",
+          "name": "Recrutador Demo",
+          "email": "demo-1789608747127@example.com",
+          "role": "recruiter",
+          "company": "Empresa fictícia — demonstração Azure"
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/tests",
+      "request": {
+        "title": "X"
+      },
+      "status": 400,
+      "response": {
+        "message": "Dados do teste inválidos."
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/tests",
+      "request": {
+        "title": "Demonstração técnica Azure",
+        "description": "Teste persistido no banco para comprovar escrita e leitura.",
+        "difficulty": "Iniciante",
+        "durationMinutes": 30,
+        "status": "active"
+      },
+      "status": 201,
+      "response": {
+        "id": "test-392eeef58270314f",
+        "title": "Demonstração técnica Azure",
+        "description": "Teste persistido no banco para comprovar escrita e leitura.",
+        "difficulty": "Iniciante",
+        "durationMinutes": 30,
+        "status": "active",
+        "candidates": 0,
+        "submissions": 0,
+        "completionRate": 0,
+        "createdAt": "2026-09-17"
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/tests/test-392eeef58270314f",
+      "request": null,
+      "status": 200,
+      "response": {
+        "id": "test-392eeef58270314f",
+        "title": "Demonstração técnica Azure",
+        "description": "Teste persistido no banco para comprovar escrita e leitura.",
+        "difficulty": "Iniciante",
+        "durationMinutes": 30,
+        "status": "active",
+        "candidates": 0,
+        "submissions": 0,
+        "completionRate": 0,
+        "createdAt": "2026-09-17"
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/tests",
+      "request": null,
+      "status": 200,
+      "response": [
+        {
+          "id": "test-392eeef58270314f",
+          "title": "Demonstração técnica Azure",
+          "description": "Teste persistido no banco para comprovar escrita e leitura.",
+          "difficulty": "Iniciante",
+          "durationMinutes": 30,
+          "status": "active",
+          "candidates": 0,
+          "submissions": 0,
+          "completionRate": 0,
+          "createdAt": "2026-09-17"
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/questions",
+      "request": {
+        "testId": "test-392eeef58270314f",
+        "statement": "Qual método HTTP solicita a leitura de dados?",
+        "type": "objective",
+        "score": 10,
+        "category": "HTTP",
+        "options": [
+          "GET",
+          "POST"
+        ],
+        "answer": "GET"
+      },
+      "status": 201,
+      "response": {
+        "id": "question-0a92d1a95a763182",
+        "createdAt": "2026-09-17T01:32:27.404Z",
+        "testId": "test-392eeef58270314f",
+        "statement": "Qual método HTTP solicita a leitura de dados?",
+        "type": "objective",
+        "score": 10,
+        "category": "HTTP",
+        "options": [
+          "GET",
+          "POST"
+        ],
+        "answer": "GET"
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/candidates",
+      "request": {
+        "testId": "test-392eeef58270314f",
+        "name": "Candidato fictício",
+        "email": "candidato-1789608747417@example.com"
+      },
+      "status": 201,
+      "response": {
+        "id": "candidate-7dab9fdc6f9d8547",
+        "name": "Candidato fictício",
+        "email": "candidato-1789608747417@example.com",
+        "status": "pending",
+        "invitationStatus": "invited",
+        "testTitle": "Demonstração técnica Azure",
+        "score": 0,
+        "time": "00:00",
+        "inviteUrl": "[REDACTED]"
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/invitations/[REDACTED]",
+      "request": null,
+      "status": 200,
+      "response": {
+        "invitation": {
+          "id": "invite-390ae687541b6125",
+          "token": "[REDACTED]",
+          "status": "started",
+          "expiresAt": "2026-10-01T01:32:27.430Z",
+          "submissionId": null
+        },
+        "candidate": {
+          "id": "candidate-7dab9fdc6f9d8547",
+          "name": "Candidato fictício",
+          "email": "candidato-1789608747417@example.com"
+        },
+        "test": {
+          "id": "test-392eeef58270314f",
+          "title": "Demonstração técnica Azure",
+          "description": "Teste persistido no banco para comprovar escrita e leitura.",
+          "difficulty": "Iniciante",
+          "durationMinutes": 30,
+          "status": "active",
+          "candidates": 0,
+          "submissions": 0,
+          "completionRate": 0,
+          "createdAt": "2026-09-17"
+        },
+        "questions": [
+          {
+            "id": "question-0a92d1a95a763182",
+            "testId": "test-392eeef58270314f",
+            "statement": "Qual método HTTP solicita a leitura de dados?",
+            "type": "objective",
+            "score": 10,
+            "category": "HTTP",
+            "options": [
+              "GET",
+              "POST"
+            ],
+            "createdAt": "2026-09-17T01:32:27.404Z"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/submissions",
+      "request": {
+        "invitationToken": "[REDACTED]",
+        "answers": [
+          {
+            "questionId": "question-0a92d1a95a763182",
+            "value": "GET"
+          }
+        ],
+        "durationSeconds": 45
+      },
+      "status": 201,
+      "response": {
+        "id": "submission-04dc3a5ee01cbca1",
+        "score": 100,
+        "categoryPerformance": [
+          {
+            "category": "Conhecimentos técnicos",
+            "score": 100
+          },
+          {
+            "category": "Raciocínio lógico",
+            "score": 100
+          },
+          {
+            "category": "Boas práticas",
+            "score": 92
+          },
+          {
+            "category": "Comunicação",
+            "score": 96
+          }
+        ],
+        "feedback": "Excelente desempenho. Você demonstrou domínio dos principais conceitos avaliados."
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/submissions",
+      "request": {
+        "invitationToken": "[REDACTED]",
+        "answers": [
+          {
+            "questionId": "question-0a92d1a95a763182",
+            "value": "GET"
+          }
+        ],
+        "durationSeconds": 45
+      },
+      "status": 409,
+      "response": {
+        "message": "Este convite já foi concluído."
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/submissions/submission-04dc3a5ee01cbca1",
+      "request": null,
+      "status": 200,
+      "response": {
+        "id": "submission-04dc3a5ee01cbca1",
+        "candidate": "Candidato fictício",
+        "testTitle": "Demonstração técnica Azure",
+        "score": 100,
+        "time": "00:45",
+        "categoryPerformance": [
+          {
+            "category": "Conhecimentos técnicos",
+            "score": 100
+          },
+          {
+            "category": "Raciocínio lógico",
+            "score": 100
+          },
+          {
+            "category": "Boas práticas",
+            "score": 92
+          },
+          {
+            "category": "Comunicação",
+            "score": 96
+          }
+        ],
+        "feedback": "Excelente desempenho. Você demonstrou domínio dos principais conceitos avaliados. Continue assim!"
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/ranking",
+      "request": null,
+      "status": 200,
+      "response": [
+        {
+          "id": "candidate-7dab9fdc6f9d8547",
+          "name": "Candidato fictício",
+          "email": "candidato-1789608747417@example.com",
+          "status": "approved",
+          "testTitle": "Demonstração técnica Azure",
+          "score": 100,
+          "time": "00:45"
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/reports",
+      "request": null,
+      "status": 200,
+      "response": {
+        "tests": [
+          {
+            "id": "test-392eeef58270314f",
+            "title": "Demonstração técnica Azure",
+            "status": "active",
+            "invitations": 1,
+            "submissions": 1,
+            "completionRate": 100,
+            "averageScore": 100
+          }
+        ],
+        "candidates": [
+          {
+            "status": "approved",
+            "total": 1
+          }
+        ],
+        "bestCandidates": [
+          {
+            "name": "Candidato fictício",
+            "testTitle": "Demonstração técnica Azure",
+            "score": 100,
+            "time": "00:45"
+          }
+        ],
+        "cloudPlan": {
+          "provider": "Microsoft Azure for Students",
+          "database": "PostgreSQL em uso",
+          "storage": "Anexos não implementados nesta versão",
+          "deploy": "Azure App Service: API Node.js e frontend React"
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/dashboard",
+      "request": null,
+      "status": 200,
+      "response": {
+        "company": "Empresa fictícia — demonstração Azure",
+        "metrics": {
+          "activeTests": 1,
+          "candidatesEvaluated": 1,
+          "completionRate": 100,
+          "averageScore": 100
+        },
+        "recentTests": [
+          {
+            "id": "test-392eeef58270314f",
+            "title": "Demonstração técnica Azure",
+            "description": "Teste persistido no banco para comprovar escrita e leitura.",
+            "difficulty": "Iniciante",
+            "durationMinutes": 30,
+            "status": "active",
+            "candidates": 1,
+            "submissions": 1,
+            "completionRate": 100,
+            "createdAt": "2026-09-17"
+          }
+        ],
+        "activity": [
+          "Candidato fictício concluiu Demonstração técnica Azure com 100%"
+        ]
+      }
+    }
+  ],
+  "passed": true,
+  "testId": "test-392eeef58270314f",
+  "submissionId": "submission-04dc3a5ee01cbca1"
+}

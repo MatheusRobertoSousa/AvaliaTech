@@ -1,0 +1,20 @@
+{
+  "executedAt": "2026-09-17T01:33:23.607Z",
+  "baseURL": "https://avaliatech-156973.azurewebsites.net/api",
+  "status": 200,
+  "sameId": true,
+  "sameTitle": true,
+  "test": {
+    "id": "test-392eeef58270314f",
+    "title": "Demonstração técnica Azure",
+    "description": "Teste persistido no banco para comprovar escrita e leitura.",
+    "difficulty": "Iniciante",
+    "durationMinutes": 30,
+    "status": "active",
+    "candidates": 0,
+    "submissions": 0,
+    "completionRate": 0,
+    "createdAt": "2026-09-17"
+  },
+  "passed": true
+}

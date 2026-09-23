@@ -1,6 +1,8 @@
 import cors from "cors";
 import "dotenv/config";
 import express from "express";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { createId, createToken, hashPassword, verifyPassword, verifyToken } from "./auth.js";
 import {
@@ -9,6 +11,7 @@ import {
   dbGet,
   dbRun,
   initializeDatabase,
+  initializeRecruitmentSchema,
   parseOptions,
   seedDatabase,
   type DbCandidate,
@@ -33,6 +36,8 @@ type CountedTest = DbTest & {
 };
 
 type PipelineCandidate = DbCandidate & {
+  invitationId: string;
+  decisionStatus: DbCandidate["status"] | null;
   invitationToken: string;
   invitationStatus: string;
   invitedTestId: string;
@@ -41,11 +46,15 @@ type PipelineCandidate = DbCandidate & {
   durationSeconds: number | null;
 };
 
-const app = express();
+const host = express();
+const app = express.Router();
 const port = Number(process.env.PORT ?? 3333);
 
-app.use(cors({ origin: process.env.CORS_ORIGIN ?? "http://localhost:5173" }));
-app.use(express.json());
+host.use(cors({ origin: process.env.CORS_ORIGIN ?? "http://localhost:5173" }));
+host.use(express.json());
+host.use("/api", app);
+// Preserve the original local API; cloud uses /api to separate SPA routes.
+if (process.env.NODE_ENV !== "production") host.use(app);
 
 function requireAuth(request: AuthenticatedRequest, response: express.Response, next: express.NextFunction) {
   const header = request.headers.authorization;
@@ -112,12 +121,13 @@ function categoryPerformance(score: number) {
 function candidateDto(candidate: PipelineCandidate) {
   return {
     id: candidate.id,
+    invitationId: candidate.invitationId,
     name: candidate.name,
     email: candidate.email,
-    status: candidate.status,
+    status: candidate.invitationStatus === "completed" ? candidate.decisionStatus ?? "review" : "pending",
     invitationStatus: candidate.invitationStatus,
     testTitle: candidate.testTitle,
-    score: candidate.score ?? 0,
+    score: candidate.score,
     time: formatDuration(candidate.durationSeconds),
     inviteUrl: `/exam?invite=${candidate.invitationToken}`
   };
@@ -142,6 +152,8 @@ async function getCandidatePipeline(companyId: string) {
   return dbAll<PipelineCandidate>(`
     SELECT
       candidates.*,
+      invitations.id as invitationId,
+      invitations.decisionStatus,
       invitations.token as invitationToken,
       invitations.status as invitationStatus,
       invitations.testId as invitedTestId,
@@ -149,22 +161,18 @@ async function getCandidatePipeline(companyId: string) {
       submissions.score,
       submissions.durationSeconds
     FROM candidates
-    JOIN invitations ON invitations.id = (
-      SELECT id FROM invitations
-      WHERE invitations.candidateId = candidates.id
-      AND invitations.companyId = ?
-      ORDER BY invitations.createdAt DESC
-      LIMIT 1
-    )
+    JOIN invitations ON invitations.candidateId = candidates.id
     JOIN tests ON tests.id = invitations.testId
     LEFT JOIN submissions ON submissions.id = (
       SELECT id FROM submissions
       WHERE submissions.candidateId = candidates.id
       AND submissions.testId = invitations.testId
-      ORDER BY submissions.finishedAt DESC
+      AND submissions.finishedAt = invitations.completedAt
+      ORDER BY submissions.finishedAt DESC, submissions.id DESC
       LIMIT 1
     )
-    ORDER BY candidates.createdAt DESC
+    WHERE invitations.companyId = ?
+    ORDER BY invitations.createdAt DESC, invitations.id DESC
   `, [companyId]);
 }
 
@@ -176,6 +184,15 @@ app.get("/health", (_request, response) => {
     cloudReady: true,
     environment: process.env.NODE_ENV ?? "development"
   });
+});
+
+app.get("/ready", async (_request, response) => {
+  try {
+    await dbGet("SELECT 1 AS connected");
+    response.json({ status: "ok", database: databaseProvider });
+  } catch {
+    response.status(503).json({ status: "unavailable", database: databaseProvider });
+  }
 });
 
 app.post("/auth/login", async (request, response) => {
@@ -494,8 +511,8 @@ app.get("/candidates", requireAuth, async (request: AuthenticatedRequest, respon
 
 app.post("/candidates", requireAuth, async (request: AuthenticatedRequest, response) => {
   const schema = z.object({
-    name: z.string().min(2),
-    email: z.string().email(),
+    name: z.string().trim().min(2),
+    email: z.string().trim().toLowerCase().email(),
     testId: z.string()
   });
   const result = schema.safeParse(request.body);
@@ -551,23 +568,15 @@ app.post("/candidates", requireAuth, async (request: AuthenticatedRequest, respo
     `, [invitation.id, invitation.companyId, invitation.candidateId, invitation.testId, invitation.token, invitation.status, invitation.createdAt, invitation.expiresAt, null]);
   }
 
-  response.status(201).json({
-    id: candidateId,
-    name: existingCandidate?.name ?? result.data.name,
-    email: existingCandidate?.email ?? result.data.email,
-    status: existingCandidate?.status ?? "pending",
-    invitationStatus: invitation.status,
-    testTitle: test.title,
-    score: 0,
-    time: "00:00",
-    inviteUrl: `/exam?invite=${invitation.token}`
-  });
+  const created = (await getCandidatePipeline(request.auth!.companyId)).find(item => item.invitationId === invitation.id)!;
+  response.status(201).json(candidateDto(created));
 });
 
 app.patch("/candidates/:id/status", requireAuth, async (request: AuthenticatedRequest, response) => {
   const candidateId = String(request.params.id);
   const schema = z.object({
-    status: z.enum(["approved", "review", "pending", "rejected"])
+    status: z.enum(["approved", "review", "rejected"]),
+    invitationId: z.string().min(1)
   });
   const result = schema.safeParse(request.body);
 
@@ -575,21 +584,18 @@ app.patch("/candidates/:id/status", requireAuth, async (request: AuthenticatedRe
     return response.status(400).json({ message: "Status do candidato inválido." });
   }
 
-  const candidate = await dbGet<{ id: string }>(`
-    SELECT candidates.id
-    FROM candidates
-    JOIN invitations ON invitations.candidateId = candidates.id
-    WHERE candidates.id = ?
-    AND invitations.companyId = ?
-    LIMIT 1
-  `, [candidateId, request.auth!.companyId]);
+  const candidate = await dbGet<{ id: string; status: string }>(`
+    SELECT id, status FROM invitations
+    WHERE id = ? AND candidateId = ? AND companyId = ?
+  `, [result.data.invitationId, candidateId, request.auth!.companyId]);
 
   if (!candidate) {
     return response.status(404).json({ message: "Candidato não encontrado." });
   }
 
-  await dbRun("UPDATE candidates SET status = ? WHERE id = ?", [result.data.status, candidateId]);
-  const updatedCandidate = (await getCandidatePipeline(request.auth!.companyId)).find((item) => item.id === candidateId);
+  if (candidate.status !== "completed") return response.status(409).json({ message: "Aguarde a conclusão da prova antes de decidir." });
+  await dbRun("UPDATE invitations SET decisionStatus = ? WHERE id = ? AND companyId = ?", [result.data.status, candidate.id, request.auth!.companyId]);
+  const updatedCandidate = (await getCandidatePipeline(request.auth!.companyId)).find((item) => item.invitationId === candidate.id);
 
   if (!updatedCandidate) {
     return response.status(404).json({ message: "Candidato não encontrado." });
@@ -627,9 +633,10 @@ app.get("/invitations/:token", async (request, response) => {
       SELECT id FROM submissions
       WHERE candidateId = ?
       AND testId = ?
+      AND finishedAt = ?
       ORDER BY finishedAt DESC
       LIMIT 1
-    `, [invitation.candidateId, invitation.testId])
+    `, [invitation.candidateId, invitation.testId, invitation.completedAt])
     : undefined;
 
   response.json({
@@ -667,6 +674,7 @@ app.post("/submissions", async (request, response) => {
   const invitation = result.data.invitationToken
     ? await dbGet<DbInvitation>("SELECT * FROM invitations WHERE token = ?", [result.data.invitationToken])
     : undefined;
+  if (!invitation) return response.status(400).json({ message: "Convite válido obrigatório." });
   const candidateId = invitation?.candidateId ?? result.data.candidateId;
   const testId = invitation?.testId ?? result.data.testId;
 
@@ -710,9 +718,8 @@ app.post("/submissions", async (request, response) => {
     now.toISOString()
   ]);
 
-  await dbRun("UPDATE candidates SET status = ? WHERE id = ?", [score >= 85 ? "approved" : "review", candidateId]);
   if (invitation) {
-    await dbRun("UPDATE invitations SET status = 'completed', completedAt = ? WHERE id = ?", [now.toISOString(), invitation.id]);
+    await dbRun("UPDATE invitations SET status = 'completed', decisionStatus = 'review', completedAt = ? WHERE id = ?", [now.toISOString(), invitation.id]);
   }
 
   response.status(201).json({
@@ -780,7 +787,11 @@ app.get("/submissions/:id", async (request, response) => {
 
 app.get("/ranking", requireAuth, async (request: AuthenticatedRequest, response) => {
   const submissions = await dbAll<DbSubmission>(`
-    SELECT submissions.*, candidates.name as candidateName, candidates.email as candidateEmail, candidates.status as candidateStatus, tests.title as testTitle
+    SELECT submissions.*, candidates.name as candidateName, candidates.email as candidateEmail,
+      COALESCE((SELECT invitations.decisionStatus FROM invitations
+        WHERE invitations.candidateId = submissions.candidateId AND invitations.testId = submissions.testId
+        AND invitations.completedAt = submissions.finishedAt ORDER BY invitations.id DESC LIMIT 1), 'review') as candidateStatus,
+      tests.title as testTitle
     FROM submissions
     JOIN candidates ON candidates.id = submissions.candidateId
     JOIN tests ON tests.id = submissions.testId
@@ -789,7 +800,7 @@ app.get("/ranking", requireAuth, async (request: AuthenticatedRequest, response)
   `, [request.auth!.companyId]);
 
   response.json(submissions.map((submission) => ({
-    id: submission.candidateId,
+    id: submission.id,
     name: submission.candidateName,
     email: submission.candidateEmail,
     status: submission.candidateStatus,
@@ -809,13 +820,12 @@ app.get("/reports", requireAuth, async (request: AuthenticatedRequest, response)
     GROUP BY tests.id
     ORDER BY tests.createdAt DESC
   `, [request.auth!.companyId]);
-  const candidates = await dbAll<{ status: string; total: number }>(`
-    SELECT candidates.status, COUNT(DISTINCT candidates.id) as total
-    FROM candidates
-    JOIN invitations ON invitations.candidateId = candidates.id
-    WHERE invitations.companyId = ?
-    GROUP BY candidates.status
-  `, [request.auth!.companyId]);
+  const counts = new Map<string, number>();
+  for (const item of await getCandidatePipeline(request.auth!.companyId)) {
+    const status = candidateDto(item).status;
+    counts.set(status, (counts.get(status) ?? 0) + 1);
+  }
+  const candidates = Array.from(counts, ([status, total]) => ({ status, total }));
   const bestCandidates = await dbAll<{ name: string; testTitle: string; score: number; durationSeconds: number }>(`
     SELECT candidates.name, tests.title as testTitle, submissions.score, submissions.durationSeconds
     FROM submissions
@@ -844,23 +854,32 @@ app.get("/reports", requireAuth, async (request: AuthenticatedRequest, response)
       time: formatDuration(candidate.durationSeconds)
     })),
     cloudPlan: {
-      provider: "AWS",
-      database: databaseProvider === "postgres" ? "Amazon RDS PostgreSQL em uso" : "Amazon RDS PostgreSQL configurável por DATABASE_URL",
-      storage: "Amazon S3 para anexos e relatórios",
-      deploy: "ECS/Fargate ou Elastic Beanstalk para API e frontend"
+      provider: "Microsoft Azure for Students",
+      database: databaseProvider === "postgres" ? "PostgreSQL em uso" : "SQLite local; Azure PostgreSQL configurável",
+      storage: "Anexos não implementados nesta versão",
+      deploy: "Azure App Service: API Node.js e frontend React"
     }
   });
 });
 
-app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+app.use((_request, response) => response.status(404).json({ message: "Endpoint não encontrado." }));
+
+if (process.env.NODE_ENV === "production") {
+  const frontend = fileURLToPath(new URL("../../frontend/dist/", import.meta.url));
+  host.use(express.static(frontend));
+  host.get("/{*path}", (_request, response) => response.sendFile(path.join(frontend, "index.html")));
+}
+
+host.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
   console.error(error);
   response.status(500).json({ message: "Erro interno no servidor." });
 });
 
 async function bootstrap() {
   await initializeDatabase();
-  await seedDatabase();
-  app.listen(port, () => {
+  await initializeRecruitmentSchema();
+  if (process.env.NODE_ENV !== "production" || process.env.SEED_DEMO === "true") await seedDatabase();
+  host.listen(port, () => {
     console.log(`AvaliaTech API running on http://localhost:${port} using ${databaseProvider}`);
   });
 }

@@ -1,0 +1,17 @@
+﻿{
+    "checkedAt":  "2026-09-17T01:34:59.7310584Z",
+    "web":  {
+                "host":  "avaliatech-156973.azurewebsites.net",
+                "httpsOnly":  true,
+                "name":  "avaliatech-156973",
+                "state":  "Running"
+            },
+    "database":  {
+                     "name":  "avaliatech-pg-156973",
+                     "publicNetworkAccess":  "Enabled",
+                     "sku":  "Standard_B1ms",
+                     "state":  "Ready",
+                     "storageGiB":  32,
+                     "version":  "16"
+                 }
+}

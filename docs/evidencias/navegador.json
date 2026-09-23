@@ -1,0 +1,12 @@
+{
+  "executedAt": "2026-09-17T01:34:10.418Z",
+  "baseURL": "https://avaliatech-156973.azurewebsites.net",
+  "checks": [
+    "Login pela interface",
+    "Dashboard com teste persistido",
+    "Refresh de rota SPA",
+    "Relatórios e provedor Azure"
+  ],
+  "pageErrors": [],
+  "passed": true
+}

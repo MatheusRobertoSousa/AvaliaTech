@@ -1,3 +1,5 @@
+> Documento histórico da etapa anterior. A implementação Azure e o roteiro atual estão em [Implementação Técnica](implementacao-tecnica-azure.md).
+
 # Parte 2 - Implementação Geral
 
 ## Objetivo do protótipo

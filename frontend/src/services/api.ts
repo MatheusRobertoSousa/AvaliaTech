@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL ?? "http://localhost:3333"
+  baseURL: import.meta.env.VITE_API_URL ?? (import.meta.env.PROD ? "/api" : "http://localhost:3333")
 });
 
 api.interceptors.request.use((config) => {
@@ -74,10 +74,11 @@ export type Question = {
 
 export type Candidate = {
   id: string;
+  invitationId: string;
   name: string;
   email: string;
   testTitle: string;
-  score: number;
+  score: number | null;
   time: string;
   status: "approved" | "review" | "pending" | "rejected";
   invitationStatus?: "invited" | "started" | "completed" | "expired";

@@ -1,0 +1,15 @@
+{
+  "executedAt": "2026-09-17T02:26:14.527Z",
+  "baseURL": "https://avaliatech-156973.azurewebsites.net/api",
+  "checks": [
+    "Duas pessoas e três participações distintas, todas pendentes e sem nota",
+    "Mesmo e-mail/teste reutiliza convite ativo sem ocultar outras participações",
+    "Não permite aprovar antes de concluir a prova",
+    "Nota 100 vai para revisão e não altera outro convite",
+    "Aprovação manual isolada; novo convite preserva histórico sem herdar aprovação/nota",
+    "Nota zero permanece 0, diferente de prova sem resultado",
+    "Outra empresa não decide nem convida para testes alheios",
+    "Ranking e relatórios refletem decisão por participação e reabertura de revisão"
+  ],
+  "passed": true
+}

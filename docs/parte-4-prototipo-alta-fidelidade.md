@@ -1,3 +1,5 @@
+> Documento histórico da etapa anterior. A implementação Azure e o roteiro atual estão em [Implementação Técnica](implementacao-tecnica-azure.md).
+
 # Parte 4 — Protótipo Funcional de Alta Fidelidade
 
 ## Objetivo

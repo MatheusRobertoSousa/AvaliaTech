@@ -3,6 +3,8 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "demo:api": "node scripts/demo-api.mjs",
+    "test:candidates": "npm run build --workspace backend && node scripts/test-candidates.mjs",
     "dev": "concurrently \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
     "build": "npm run build --workspace backend && npm run build --workspace frontend",
     "start": "concurrently \"npm run start --workspace backend\" \"npm run preview --workspace frontend\"",

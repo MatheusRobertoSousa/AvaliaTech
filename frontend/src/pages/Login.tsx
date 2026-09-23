@@ -18,8 +18,8 @@ export function Login() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [companyName, setCompanyName] = useState("");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("recrutador@techsolutions.com");
-  const [password, setPassword] = useState("123456");
+  const [email, setEmail] = useState(import.meta.env.DEV ? "recrutador@techsolutions.com" : "");
+  const [password, setPassword] = useState(import.meta.env.DEV ? "123456" : "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,8 +27,8 @@ export function Login() {
     setMode(nextMode);
     setError("");
     if (nextMode === "login") {
-      setEmail("recrutador@techsolutions.com");
-      setPassword("123456");
+      setEmail(import.meta.env.DEV ? "recrutador@techsolutions.com" : "");
+      setPassword(import.meta.env.DEV ? "123456" : "");
     } else {
       setCompanyName("");
       setName("");
@@ -74,13 +74,13 @@ export function Login() {
           <li><FileBarChart size={18} /> Indicadores de conclusão, média e desempenho</li>
           <li><Workflow size={18} /> Fluxo completo de teste até ranking</li>
         </ul>
-        <span><Cloud size={16} /> Planejado para AWS, PostgreSQL e armazenamento em nuvem</span>
+        <span><Cloud size={16} /> Azure for Students · PostgreSQL · Aplicação em nuvem</span>
       </section>
 
       <section className="loginCard">
         <Logo />
         <h2>{mode === "login" ? "Entrar no AvaliaTech" : "Criar workspace"}</h2>
-        <p>{mode === "login" ? "Use a conta demonstrativa ou uma conta cadastrada." : "Cadastre empresa e recrutador para começar."}</p>
+        <p>{mode === "login" ? "Entre com sua conta cadastrada." : "Cadastre empresa e recrutador para começar."}</p>
         <div className="tabs">
           <button type="button" className={mode === "login" ? "active" : ""} onClick={() => changeMode("login")}>Entrar</button>
           <button type="button" className={mode === "register" ? "active" : ""} onClick={() => changeMode("register")}>Criar conta</button>
@@ -120,7 +120,7 @@ export function Login() {
             {saving ? "Acessando..." : mode === "login" ? "Acessar plataforma" : "Criar e acessar"} <ArrowRight size={16} />
           </button>
         </form>
-        <small>Demo: recrutador@techsolutions.com / 123456</small>
+        {import.meta.env.DEV && <small>Demo: recrutador@techsolutions.com / 123456</small>}
       </section>
     </main>
   );
